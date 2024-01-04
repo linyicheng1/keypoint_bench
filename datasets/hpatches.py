@@ -2,7 +2,6 @@ import numpy as np
 import torch.utils.data as data
 import glob
 from pathlib import Path
-import matplotlib.pyplot as plt
 import cv2
 from utils.projection import scale_intrinsics
 
@@ -92,10 +91,12 @@ class HPatchesDataset(data.Dataset):
 
 if __name__ == '__main__':
     from tqdm import tqdm
-    hpatches_dataset = HPatchesDataset(root='', alteration='i')
+    import matplotlib.pyplot as plt
+    import matplotlib
+    matplotlib.use('TkAgg')
+    hpatches_dataset = HPatchesDataset(root='/media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/WangShuo/datasets/HPatch', alteration='i')
     for data in tqdm(hpatches_dataset):
         image0 = data['image0']
         image1 = data['image1']
         plt.imshow(image0.transpose(1, 2, 0))
-        plt.imshow(image1.transpose(1, 2, 0))
         plt.show()

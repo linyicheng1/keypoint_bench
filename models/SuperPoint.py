@@ -98,3 +98,16 @@ class SuperPoint(object):
                 desc_map_2[:, :, i, j] = torch.mean(desc[:, :256, i * 8:(i + 1) * 8, j * 8:(j + 1) * 8], dim=(2, 3))
         desc_map_2 = desc_map_2 / (torch.norm(desc_map_2, p=2, dim=1, keepdim=True) + 0.0001)
         return torch.from_numpy(heatmap).unsqueeze(0).unsqueeze(0), desc_map_0, desc_map_1, desc_map_2
+
+
+if __name__ == '__main__':
+    from thop import profile
+    import numpy as np
+    net = SuperPointNet()
+    net.load_state_dict(torch.load('../weights/superpoint_v1.pth', map_location='cpu'))
+    net.eval()
+
+    image = torch.tensor(np.random.random((1, 1, 512, 512)), dtype=torch.float32)
+    flops, params = profile(net, inputs=(image,))
+    print('{:<30}  {:<8} GFLops'.format('Computational complexity: ', flops / 1e9))
+    print('{:<30}  {:<8} KB'.format('Number of parameters: ', params / 1e3))

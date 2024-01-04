@@ -81,7 +81,7 @@ class ResBlock(nn.Module):
         return out
 
 
-class ML_Point(nn.Module):
+class GoodPoint(nn.Module):
     def __init__(self, params):
         super().__init__()
         c0 = params['c0']
@@ -91,20 +91,6 @@ class ML_Point(nn.Module):
         self.block = ConvBlock(c0, c1)
         self.conv_head1 = resnet.conv1x1(c1, 3)
         self.conv_head2 = resnet.conv3x3(c1, 1)
-
-    def ri_head(self, conv2d, x):
-        outputs = [conv2d(x)]
-        index = torch.tensor([[1, 0], [0, 0], [0, 1],
-                              [2, 0], [1, 1], [0, 2],
-                              [2, 1], [2, 2], [1, 2]])
-        weight = conv2d.weight.data
-        for i in range(1, 4):
-            weight = weight[:, :, index[:, 0], index[:, 1]].view(conv2d.weight.data.shape)
-            outputs.append(F.conv2d(x, weight, conv2d.bias, conv2d.stride, conv2d.padding, conv2d.dilation,
-                                    conv2d.groups))
-        output = torch.cat(outputs, dim=0)
-        output = torch.max(output, dim=0, keepdim=True)[0]
-        return output
 
     def forward(self, x):
         """
@@ -126,14 +112,18 @@ class ML_Point(nn.Module):
 
 
 if __name__ == '__main__':
+    from thop import profile
     params = {
         'c0': 3,
-        'c1': 6,
+        'c1': 8,
         'h0': 4,
     }
-    model = ML_Point(params)
+    model = GoodPoint(params)
+    weight = torch.load("../weights/goodpoint.pth")
+    model.load_state_dict(weight)
+
     x = torch.randn(1, 3, 512, 512)
-    score, desc_map = model(x)
-    print(score.shape)
-    print(desc_map.shape)
+    flops, params = profile(model, inputs=(x,))
+    print('{:<30}  {:<8} GFLops'.format('Computational complexity: ', flops / 1e9))
+    print('{:<30}  {:<8} KB'.format('Number of parameters: ', params / 1e3))
 

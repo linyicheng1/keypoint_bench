@@ -1,4 +1,3 @@
-import os
 import copy
 import h5py
 import torch
@@ -377,8 +376,8 @@ if __name__ == '__main__':
         plt.show()
 
 
-    dataset = MegaDepthDataset(  # root='../data/megadepth',
-        root='/home/c211/datasets/megadepth',
+    dataset = MegaDepthDataset(
+        root='/media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/disk-data/megadepth',
         train=False,
         using_cache=True,
         pairs_per_scene=100,
@@ -387,7 +386,7 @@ if __name__ == '__main__':
         gray=False,
         crop_or_scale='scale',
     )
-    # dataset.build_dataset()
+    dataset.build_dataset()
 
     batch_size = 2
 
