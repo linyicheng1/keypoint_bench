@@ -1,0 +1,76 @@
+# config.yaml
+fit:
+    seed_everything: 693265068
+    trainer:
+        accelerator: gpu
+        max_steps: 100000
+        devices: [1]
+        accumulate_grad_batches: 16
+        val_check_interval: 0.2
+    data:
+        params:
+            batch_size: 1
+            num_workers: 8
+            train_dataset:
+                type: megadepth
+                root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/disk-data/megadepth
+                using_cache: True
+                pairs_per_scene: 100
+                image_size: 512
+                colorjit: True
+                gray: False
+                crop_or_scale: 'scale'
+            val_dataset:
+                type: hpatches
+                root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/WangShuo/datasets/HPatch
+                alteration: v
+                image_size: 512
+                gray: False
+    model:
+        params:
+            pretrained: False
+            weight: /home/server/linyicheng/py_proj/MLPoint/weight/last_1200.pth
+#            weight: /home/server/linyicheng/py_proj/MLPoint/weight/superpoint_v1.pth
+            loss:
+                projection_loss_weight: 0.02
+                local_consistency_loss_weight: 1.0
+                dense_matching_loss_weight: 1.0
+            weight_decay: 1e-5
+            lr: 1e-3
+            lr_scheduler:
+                type: step
+                step_size: 10
+                gamma: 0.1
+            model_size:
+                c0: 3
+                c1: 8
+            nms_dist: 4
+            min_score: 0.0
+            top_k: 300
+            threshold: 3
+test:
+    trainer:
+        max_epochs: 1
+        accelerator: gpu
+        devices: [1]
+    data:
+        params:
+            batch_size: 1
+            num_workers: 8
+            test_dataset:
+                type: hpatches
+                root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/WangShuo/datasets/HPatch
+                alteration: v
+                image_size: 512
+                gray: False
+    model:
+        params:
+            pretrained: True
+            weight: /home/server/linyicheng/py_proj/MLPoint/weight/last_2400.pth
+            model_size:
+                c0: 3
+                c1: 8
+            nms_dist: 4
+            min_score: 0.0
+            top_k: 300
+            threshold: 3
