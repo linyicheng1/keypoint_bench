@@ -3,7 +3,6 @@ import torch.utils.data as data
 import glob
 from pathlib import Path
 import cv2
-from utils.projection import scale_intrinsics
 
 
 class HPatchesDataset(data.Dataset):

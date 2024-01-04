@@ -2,7 +2,7 @@ import torch.utils.data as data
 import cv2
 
 
-class KittiDataset(data.Dataset):
+class UMADataset(data.Dataset):
 
     def __init__(self, root="", gray=False):
         self.root = root
@@ -16,5 +16,4 @@ class KittiDataset(data.Dataset):
         # read image
         img = cv2.imread(self.image_list[item], cv2.IMREAD_COLOR)
         assert img is not None, 'can not load: ' + self.image_list[item]
-
 

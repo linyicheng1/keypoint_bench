@@ -1,14 +1,12 @@
-import inspect
-import importlib
-import pickle as pkl
-import pytorch_lightning as pl
-import torch.nn
 from torch.utils.data import DataLoader
-from torch.utils.data.sampler import WeightedRandomSampler
 from pytorch_lightning import LightningDataModule
-from .hpatches import HPatchesDataset
-from .megadepth import MegaDepthDataset
-
+from hpatches import HPatchesDataset
+from megadepth import MegaDepthDataset
+from kitti import KittiDataset
+from euroc import EurocDataset
+from uma import UMADataset
+from video import VideoDataset
+from images import ImagesDataset
 
 class DInterface(LightningDataModule):
 
@@ -54,6 +52,16 @@ class DInterface(LightningDataModule):
                                     params['pairs_per_scene'], params['image_size'],
                                     params['colorjit'], params['gray'],
                                     params['crop_or_scale'])
+        elif params['type'] == 'kitti':
+            return KittiDataset(params['root'], params['gray'])
+        elif params['type'] == 'euroc':
+            return EurocDataset(params['root'], params['gray'])
+        elif params['type'] == 'uma':
+            return UMADataset(params['root'], params['gray'])
+        elif params['type'] == 'video':
+            return VideoDataset(params['root'], params['gray'])
+        elif params['type'] == 'images':
+            return ImagesDataset(params['root'], params['gray'])
         else:
             raise ValueError('Invalid dataset type')
 
