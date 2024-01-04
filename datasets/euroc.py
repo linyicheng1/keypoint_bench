@@ -82,8 +82,8 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import matplotlib
     matplotlib.use('TkAgg')
-    hpatches_dataset = EurocDataset(root='/media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/euroc/MH_01_easy/mav0/', gray=True)
-    for data in tqdm(hpatches_dataset):
+    dataset = EurocDataset(root='/media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/euroc/MH_01_easy/mav0/', gray=True)
+    for data in tqdm(dataset):
         image0 = data['image0']
         image1 = data['image1']
         plt.imshow(image0.transpose(1, 2, 0), cmap='gray')
