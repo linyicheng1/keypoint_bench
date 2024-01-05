@@ -2,10 +2,11 @@
 test:
     data:
         params:
-            datatype: hpatches
+            data_type: hpatches
             batch_size: 1
             num_workers: 8
             hpatches_params:
+                type: hpatches
                 root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/WangShuo/datasets/HPatch
                 alteration: v
                 image_size: 512
@@ -29,9 +30,16 @@ test:
                 gray: True
     model:
         params:
-            modeltype: Alike
-            pretrained: True
-            weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/alike-t.pth
+            model_type: Alike
+            task_type: VisualizeTrackingError
+            Alike_params:
+                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/alike-t.pth
+                c1: 8
+                c2: 16
+                c3: 32
+                c4: 64
+                dim: 64
+                single_head: True
             extractor_params:
                 nms_dist: 4
                 min_score: 0.0

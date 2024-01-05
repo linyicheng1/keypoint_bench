@@ -1,12 +1,13 @@
 from torch.utils.data import DataLoader
 from pytorch_lightning import LightningDataModule
-from hpatches import HPatchesDataset
-from megadepth import MegaDepthDataset
-from kitti import KittiDataset
-from euroc import EurocDataset
-from uma import UMADataset
-from video import VideoDataset
-from images import ImagesDataset
+from datasets.hpatches import HPatchesDataset
+from datasets.megadepth import MegaDepthDataset
+from datasets.kitti import KittiDataset
+from datasets.euroc import EurocDataset
+from datasets.uma import UMADataset
+from datasets.video import VideoDataset
+from datasets.images import ImagesDataset
+
 
 class DInterface(LightningDataModule):
 
@@ -14,12 +15,8 @@ class DInterface(LightningDataModule):
         super().__init__()
         self.num_workers = params['num_workers']
         self.batch_size = params['batch_size']
-        if 'train_dataset' in params:
-            self.trainset_param = params['train_dataset']
-        if 'val_dataset' in params:
-            self.valset_param = params['val_dataset']
-        if 'test_dataset' in params:
-            self.testset_param = params['test_dataset']
+        data_type = params['data_type']
+        self.test_set_param = params[data_type+'_params']
 
     def setup(self, stage=None):
         # Assign train/val datasets for use in dataloaders
@@ -29,7 +26,7 @@ class DInterface(LightningDataModule):
 
         # Assign test dataset for use in dataloader(s)
         if stage == 'test' or stage is None:
-            self.testset = self.instancialize(self.testset_param, train=False)
+            self.test_set = self.instancialize(self.test_set_param, train=False)
 
     def train_dataloader(self):
         return DataLoader(self.trainset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
@@ -38,7 +35,7 @@ class DInterface(LightningDataModule):
         return DataLoader(self.valset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
 
     def test_dataloader(self):
-        return DataLoader(self.testset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+        return DataLoader(self.test_set, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
 
     def instancialize(self, params, train=True):
         """ Instancialize a model using the corresponding parameters

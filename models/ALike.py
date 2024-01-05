@@ -81,11 +81,21 @@ class ResBlock(nn.Module):
 
 
 class ALNet(nn.Module):
-    def __init__(self, c1: int = 32, c2: int = 64, c3: int = 128, c4: int = 128, dim: int = 128,
-                 single_head: bool = True,
-                 ):
+    def __init__(self, param=None):
         super().__init__()
-
+        if param is None:
+            c1 = 32
+            c2 = 64
+            c3 = 128
+            c4 = 128
+            dim = 128
+        else:
+            c1 = param['c1']
+            c2 = param['c2']
+            c3 = param['c3']
+            c4 = param['c4']
+            dim = param['dim']
+        single_head: bool = True
         self.gate = nn.ReLU(inplace=True)
 
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)

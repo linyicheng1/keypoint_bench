@@ -78,7 +78,8 @@ class HPatchesDataset(data.Dataset):
                                   'resize': self.image_size},
                 'warp10_params': {'mode': 'homo', 'width': w0, 'height': h0,
                                   'homography_matrix': np.linalg.inv(homography),
-                                  'resize': self.image_size}
+                                  'resize': self.image_size},
+                'dataset': 'HPatches'
                 }
 
     def __len__(self):
