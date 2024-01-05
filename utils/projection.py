@@ -144,7 +144,7 @@ def warp_homography(kpts0, params):
     homography_matrix = params['homography_matrix']
     w, h = params['width'], params['height']
 
-    kpts0 = kpts0 * torch.tensor([w, h]).to(kpts0.device)
+    kpts0 = kpts0 * torch.tensor([w-1, h-1]).to(kpts0.device)
     kpts0_homogeneous = to_homogeneous(kpts0)
     kpts01_homogeneous = torch.einsum('ij,kj->ki', homography_matrix, kpts0_homogeneous)
     kpts01 = kpts01_homogeneous[:, :2] / kpts01_homogeneous[:, 2:]

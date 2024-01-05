@@ -194,8 +194,8 @@ def optical_flow_tensor(pts0: torch.tensor,
     :return:
     """
     optical_flow = OpticalFlow(params)
-    pts1_, error_ = optical_flow(pts0, pts1, img0, img1)
-    return pts1_, error_
+    pts1_, error_ = optical_flow(img0, img1, pts0, pts1)
+    return pts1_
 
 
 

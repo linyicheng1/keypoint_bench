@@ -29,6 +29,7 @@ class MInterface(pl.LightningModule):
         # model choice
         if params['model_type'] == 'Alike':
             self.model = ALNet(params['Alike_params'])
+            self.model.load_state_dict(torch.load(params['Alike_params']['weight']))
         elif params['model_type'] == 'GoodPoint':
             self.model = GoodPoint(params['GoodPoint_params'])
         elif params['model_type'] == 'KeyNet':
@@ -44,18 +45,24 @@ class MInterface(pl.LightningModule):
         self.repeatability = None
         self.accuracy = None
         self.matching_score = None
+        self.track_error = None
 
     def on_test_start(self) -> None:
         self.num_feat = []
         self.repeatability = []
         self.accuracy = []
         self.matching_score = []
+        self.track_error = []
 
     def on_test_end(self) -> None:
         self.num_feat = np.mean(self.num_feat)
         self.repeatability = np.mean(self.repeatability)
         self.accuracy = np.mean(self.accuracy)
         self.matching_score = np.mean(self.matching_score)
+
+        self.track_error = torch.as_tensor(self.track_error).cpu().numpy()
+        self.track_error = np.mean(self.track_error)
+        print('track_error', self.track_error)
 
     def test_step(self, batch: Tensor, batch_idx: int) -> STEP_OUTPUT:
 
@@ -73,16 +80,20 @@ class MInterface(pl.LightningModule):
         desc_map_0 = None
         desc_map_1 = None
 
-        if batch['dataset'] == 'HPatches' or batch['dataset'] == 'megaDepth':
+        if batch['dataset'][0] == 'HPatches' or batch['dataset'][0] == 'megaDepth':
             result0 = self.model(batch['image0'])
             result1 = self.model(batch['image1'])
-            score_map_0 = result0[0].detach().cpu()
-            score_map_1 = result1[0].detach().cpu()
-            desc_map_0 = result0[1].detach().cpu()
-            desc_map_1 = result1[1].detach().cpu()
+            score_map_0 = result0[0].detach()
+            score_map_1 = result1[0].detach()
+            desc_map_0 = result0[1].detach()
+            desc_map_1 = result1[1].detach()
 
         # task
+        result = None
         if self.params['task_type'] == 'VisualizeTrackingError':
-            visualize_tracking_error(score_map_0, score_map_1, desc_map_0, desc_map_1, self.params)
+            result = visualize_tracking_error(batch_idx, batch['image0'], score_map_0,
+                                              batch['image0'], batch['image1'],
+                                              self.params, warp01_params)
+            self.track_error.append(result['track_error'])
 
-        return {}
+        return result

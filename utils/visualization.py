@@ -21,7 +21,7 @@ def plot_kps_error(image: torch.tensor,
             'max_error': 8,
             'color': (255, 0, 0)
         }
-    image = image.cpu().detach().numpy() if isinstance(image, torch.Tensor) else image
+    image = image[0].cpu().detach().numpy().transpose(1, 2, 0) if isinstance(image, torch.Tensor) else image
     kps = kps.cpu().detach().numpy() if isinstance(kps, torch.Tensor) else kps
 
     if image.dtype is not np.dtype('uint8'):
