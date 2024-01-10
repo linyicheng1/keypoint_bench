@@ -19,7 +19,7 @@ from models.SuperPoint import SuperPoint
 from models.Harris import Harris
 
 # import tasks
-from tasks.VisualizeTrackingError import visualize_tracking_error
+from tasks.VisualizeTrackingError import visualize_tracking_error, plot_tracking_error
 from tasks.repeatability import repeatability, plot_repeatability
 
 
@@ -72,9 +72,10 @@ class MInterface(pl.LightningModule):
             rep = np.mean(rep)
             print('repeatability', rep)
         elif self.params['task_type'] == 'VisualizeTrackingError':
-            self.track_error = torch.as_tensor(self.track_error).cpu().numpy()
-            self.track_error = np.mean(self.track_error)
-            print('track_error', self.track_error)
+            error = torch.as_tensor(self.track_error).cpu().numpy()
+            plot_tracking_error(error, self.params['VisualizeTrackingError_params']['save_path'])
+            error = np.mean(error)
+            print('track_error', error)
 
     def test_step(self, batch: Tensor, batch_idx: int) -> STEP_OUTPUT:
 
@@ -105,6 +106,7 @@ class MInterface(pl.LightningModule):
         result = None
         if self.params['task_type'] == 'VisualizeTrackingError':
             if self.params['model_type'] == 'LETNet':
+            # if self.params['model_type'] == 'LETNet' or self.params['model_type'] == 'GoodPoint':
                 result = visualize_tracking_error(batch_idx, batch['image0'], score_map_0,
                                                   desc_map_0, desc_map_1,
                                                   self.params, warp01_params)

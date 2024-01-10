@@ -3,7 +3,7 @@ import torch
 from utils.extracter import detection
 from utils.matcher import optical_flow_tensor, optical_flow_cv
 from utils.projection import warp
-from utils.visualization import plot_kps_error
+from utils.visualization import plot_kps_error, write_txt
 
 
 def visualize_tracking_error(step: int,
@@ -50,3 +50,10 @@ def visualize_tracking_error(step: int,
     cv2.imwrite(root + str(step) + '_tracking_error.png', show)
     return {"track_error": torch.mean(error), "kps0": kps0, "kps1": kps1, "kps01": kps01}
 
+
+def plot_tracking_error(error, save_path):
+    import matplotlib.pyplot as plt
+    plt.plot(error)
+    plt.savefig(save_path)
+    plt.close()
+    write_txt(save_path.replace('.png', '.txt'), error)

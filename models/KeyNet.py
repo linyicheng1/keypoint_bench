@@ -117,6 +117,7 @@ class KeyNet(nn.Module):
         """
         x - input image
         """
+        x = torch.sum(x, dim=1, keepdim=True)
         shape_im = x.shape
         for i in range(self.num_levels):
             if i == 0:

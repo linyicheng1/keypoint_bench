@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 from utils.projection import warp
 from utils.extracter import detection
-from utils.visualization import plot_kps_error
+from utils.visualization import plot_kps_error, write_txt
 
 
 def mutual_argmax(value, mask=None, as_tuple=True):
@@ -118,3 +118,4 @@ def plot_repeatability(repeatability, save_path):
     plt.plot(repeatability)
     plt.savefig(save_path)
     plt.close()
+    write_txt(save_path.replace('.png', '.txt'), repeatability)

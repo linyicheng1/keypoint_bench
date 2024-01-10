@@ -27,7 +27,7 @@ test:
                 pairs_per_scene: 100
                 image_size: 512
                 colorjit: True
-                gray: False
+                gray: True
                 crop_or_scale: 'scale'
             uma_params:
                 root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/WangShuo/datasets/KITTI
@@ -35,7 +35,7 @@ test:
     model:
         params:
             model_type: Alike
-            task_type: repeatability
+            task_type: VisualizeTrackingError
             Alike_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/alike-t.pth
                 c1: 8
@@ -75,13 +75,14 @@ test:
                     interation: 40
                     gray: False
             VisualizeTrackingError_params:
+                save_path: /home/server/linyicheng/py_proj/keypoint_bench/tracking_error.png
                 output: /home/server/linyicheng/py_proj/keypoint_bench/output/
                 image:
-                    radius: 6
+                    radius: 12
                     max_error: 5
                     color: 255,0,0
             repeatability_params:
-                save_path: /home/server/linyicheng/py_proj/keypoint_bench/repeatability.png
+                save_path: /home/server/linyicheng/py_proj/keypoint_bench/harris.png
                 output: /home/server/linyicheng/py_proj/keypoint_bench/output/
                 th: 3
                 image:

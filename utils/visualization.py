@@ -49,3 +49,17 @@ def plot_kps_error(image: torch.tensor,
                 color = (2*e, 0, 255 - e*2)
         cv2.drawMarker(out, (x0, y0), color, cv2.MARKER_CROSS, params['radius'])
     return out
+
+
+def write_txt(filename: str,
+              data: np.ndarray,
+              mode: str = 'w'):
+    """ write data to txt file
+    :param filename: filename
+    :param data: data to write
+    :param mode: 'w' or 'a'
+    :return:
+    """
+    with open(filename, mode) as f:
+        for i in range(data.shape[0]):
+            f.write(str(data[i]) + '\n')
