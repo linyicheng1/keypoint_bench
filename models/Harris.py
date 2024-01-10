@@ -11,7 +11,14 @@ class Harris(nn.Module):
         self.params = params
 
     def forward(self, x):
-        return x
+        # 1. to numpy
+        img0 = (torch.sum(x[0].cpu().permute(1, 2, 0), dim=2) * 255).numpy().astype('uint8')
+        block_size = self.params['block_size']
+        ksize = self.params['ksize']
+        k = self.params['k']
+        harris_map_0 = torch.from_numpy(cv2.cornerHarris(img0, block_size, ksize, k)).unsqueeze(0).unsqueeze(0)
+        harris_map_0 = harris_map_0.to(x.device)
+        return harris_map_0, None
 
 
 

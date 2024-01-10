@@ -11,22 +11,26 @@ class OpticalFlow(object):
                 'win_size': 3,
                 'levels': 1,
                 'interation': 40,
+                'gray': False
             }
         self.distance = params['distance']
         self.win_size = params['win_size']
         self.levels = params['levels']
         self.interation = params['interation']
+        self.gray = params['gray']
+
         dx = torch.tensor([[[[1, 0, -1], [2, 0, -2], [1, 0, -1]]]])
         dy = torch.tensor([[[[1, 2, 1], [0, 0, 0], [-1, -2, -1]]]])
-        zero = torch.zeros_like(dx)
-        dx0 = torch.cat([dx, zero, zero], dim=1)
-        dx1 = torch.cat([zero, dx, zero], dim=1)
-        dx2 = torch.cat([zero, zero, dx], dim=1)
-        dx = torch.cat([dx0, dx1, dx2], dim=0)
-        dy0 = torch.cat([dy, zero, zero], dim=1)
-        dy1 = torch.cat([zero, dy, zero], dim=1)
-        dy2 = torch.cat([zero, zero, dy], dim=1)
-        dy = torch.cat([dy0, dy1, dy2], dim=0)
+        if not self.gray:
+            zero = torch.zeros_like(dx)
+            dx0 = torch.cat([dx, zero, zero], dim=1)
+            dx1 = torch.cat([zero, dx, zero], dim=1)
+            dx2 = torch.cat([zero, zero, dx], dim=1)
+            dx = torch.cat([dx0, dx1, dx2], dim=0)
+            dy0 = torch.cat([dy, zero, zero], dim=1)
+            dy1 = torch.cat([zero, dy, zero], dim=1)
+            dy2 = torch.cat([zero, zero, dy], dim=1)
+            dy = torch.cat([dy0, dy1, dy2], dim=0)
         self.dx = dx
         self.dy = dy
 

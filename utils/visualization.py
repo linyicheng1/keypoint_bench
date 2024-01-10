@@ -38,7 +38,8 @@ def plot_kps_error(image: torch.tensor,
         error = torch.clamp(error, max=4, min=0)
     for i in range(pts.shape[0]):
         x0, y0 = pts[i]
-        color = params['color']
+        color = params['color'].split(',')
+        color = (int(color[0]), int(color[1]), int(color[2]))
         if error is not None:
             e = int(error[i] * 255. / params['max_error'])
             if e < 127:

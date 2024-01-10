@@ -128,7 +128,7 @@ class KeyNet(nn.Module):
                 feats = torch.cat([feats, feats_i], dim=1)
 
         scores = self.last_conv(feats)
-        return scores
+        return scores, None
 
 
 if __name__ == '__main__':
@@ -138,7 +138,7 @@ if __name__ == '__main__':
     model = KeyNet(keynet_conf)
     print(model)
     # load the pretrained model
-    checkpoint = torch.load('../weights/keynet_pytorch.pth')
+    checkpoint = torch.load('/home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/keynet_pytorch.pth')
     model.load_state_dict(checkpoint['state_dict'])
     model.eval()
     # Test the model

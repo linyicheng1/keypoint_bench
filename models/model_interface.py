@@ -16,9 +16,11 @@ from models.GoodPoint import GoodPoint
 from models.KeyNet import KeyNet
 from models.LETNet import LETNet
 from models.SuperPoint import SuperPoint
+from models.Harris import Harris
 
 # import tasks
 from tasks.VisualizeTrackingError import visualize_tracking_error
+from tasks.repeatability import repeatability, plot_repeatability
 
 
 class MInterface(pl.LightningModule):
@@ -32,12 +34,17 @@ class MInterface(pl.LightningModule):
             self.model.load_state_dict(torch.load(params['Alike_params']['weight']))
         elif params['model_type'] == 'GoodPoint':
             self.model = GoodPoint(params['GoodPoint_params'])
+            self.model.load_state_dict(torch.load(params['GoodPoint_params']['weight']))
         elif params['model_type'] == 'KeyNet':
             self.model = KeyNet(params['KeyNet_params'])
+            checkpoint = torch.load(params['KeyNet_params']['weight'])
+            self.model.load_state_dict(checkpoint['state_dict'])
         elif params['model_type'] == 'LETNet':
             self.model = LETNet(params['LETNet_params'])
         elif params['model_type'] == 'SuperPoint':
             self.model = SuperPoint(params['SuperPoint_params'])
+        elif params['model_type'] == 'Harris':
+            self.model = Harris(params['Harris_params'])
         else:
             raise NotImplementedError
         self.model.eval()
@@ -56,13 +63,18 @@ class MInterface(pl.LightningModule):
 
     def on_test_end(self) -> None:
         self.num_feat = np.mean(self.num_feat)
-        self.repeatability = np.mean(self.repeatability)
         self.accuracy = np.mean(self.accuracy)
         self.matching_score = np.mean(self.matching_score)
 
-        self.track_error = torch.as_tensor(self.track_error).cpu().numpy()
-        self.track_error = np.mean(self.track_error)
-        print('track_error', self.track_error)
+        if self.params['task_type'] == 'repeatability':
+            rep = torch.as_tensor(self.repeatability).cpu().numpy()
+            plot_repeatability(rep, self.params['repeatability_params']['save_path'])
+            rep = np.mean(rep)
+            print('repeatability', rep)
+        elif self.params['task_type'] == 'VisualizeTrackingError':
+            self.track_error = torch.as_tensor(self.track_error).cpu().numpy()
+            self.track_error = np.mean(self.track_error)
+            print('track_error', self.track_error)
 
     def test_step(self, batch: Tensor, batch_idx: int) -> STEP_OUTPUT:
 
@@ -85,15 +97,26 @@ class MInterface(pl.LightningModule):
             result1 = self.model(batch['image1'])
             score_map_0 = result0[0].detach()
             score_map_1 = result1[0].detach()
-            desc_map_0 = result0[1].detach()
-            desc_map_1 = result1[1].detach()
+            if result0[1] is not None:
+                desc_map_0 = result0[1].detach()
+                desc_map_1 = result1[1].detach()
 
         # task
         result = None
         if self.params['task_type'] == 'VisualizeTrackingError':
-            result = visualize_tracking_error(batch_idx, batch['image0'], score_map_0,
-                                              batch['image0'], batch['image1'],
-                                              self.params, warp01_params)
+            if self.params['model_type'] == 'LETNet':
+                result = visualize_tracking_error(batch_idx, batch['image0'], score_map_0,
+                                                  desc_map_0, desc_map_1,
+                                                  self.params, warp01_params)
+            else:
+                result = visualize_tracking_error(batch_idx, batch['image0'], score_map_0,
+                                                  batch['image0'], batch['image1'],
+                                                  self.params, warp01_params)
             self.track_error.append(result['track_error'])
-
+        elif self.params['task_type'] == 'repeatability':
+            result = repeatability(batch_idx, batch['image0'], score_map_0,
+                                   batch['image1'], score_map_1,
+                                   warp01_params, warp10_params, self.params)
+            self.num_feat.append(result['num_feat'])
+            self.repeatability.append(result['repeatability'])
         return result
