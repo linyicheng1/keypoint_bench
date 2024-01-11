@@ -2,6 +2,36 @@ import torch.utils.data as data
 import cv2
 import glob
 import numpy as np
+import pypose as pp
+import torch
+import os
+
+
+def pose_2_fundamental_matrix(pose, fundamental, fx, fy, cx, cy):
+    k = torch.tensor([[fx, 0, cx],
+                      [0, fy, cy],
+                      [0, 0, 1]])
+    fundamental.append(torch.zeros(3, 3).unsqueeze(0))
+    for i in range(len(pose) - 1):
+        dp = pp.Inv(pose[i]) * pose[i + 1]
+        t_hat = torch.tensor([[0, -dp[2], dp[1]],
+                              [dp[2], 0, -dp[0]],
+                              [-dp[1], dp[0], 0]])
+        r = pp.SO3(dp.tensor()[3:7])
+        f = torch.inverse(k).t() @ t_hat @ r.matrix() @ torch.inverse(k)
+        fundamental.append(f.unsqueeze(0))
+
+
+def read_gt_csv(path, ground_truth):
+    with open(path, 'r') as f:
+        for line in f.readlines():
+            line_list = line.split(' ')
+            m = torch.tensor([[float(line_list[0]), float(line_list[1]), float(line_list[2]), float(line_list[3])],
+                              [float(line_list[4]), float(line_list[5]), float(line_list[6]), float(line_list[7])],
+                              [float(line_list[8]), float(line_list[9]), float(line_list[10]), float(line_list[11])],
+                              [0, 0, 0, 1]])
+            p = pp.from_matrix(m, ltype=pp.SE3_type)
+            ground_truth.append(p)
 
 
 class KittiDataset(data.Dataset):
@@ -15,11 +45,21 @@ class KittiDataset(data.Dataset):
         self.bf = self.baseline * self.fx
         self.sequence_path = sequence_path
         self.gt_path = gt_path
+        self.fundamental_path = gt_path.replace('.txt', '_fundamental.pt')
         self.gray = gray
         self.image_0_list = glob.glob(self.sequence_path + 'image_0/*')
         self.image_1_list = glob.glob(self.sequence_path + 'image_1/*')
         self.image_0_list.sort()
         self.image_1_list.sort()
+        self.ground_truth = []
+        self.Fundamentals = []
+        read_gt_csv(self.gt_path, self.ground_truth)
+        if os.path.exists(self.fundamental_path):
+            self.Fundamentals = torch.load(self.fundamental_path)
+        else:
+            pose_2_fundamental_matrix(self.ground_truth, self.Fundamentals, self.fx, self.fy, self.cx, self.cy)
+            fundamentals = torch.cat(self.Fundamentals, dim=0)
+            torch.save(fundamentals, self.fundamental_path)
 
     def __len__(self):
         return len(self.image_0_list)
@@ -49,6 +89,8 @@ class KittiDataset(data.Dataset):
             'cx': self.cx,
             'cy': self.cy,
             'bf': self.bf,
+            'ground_truth': self.ground_truth[item],
+            'fundamental': self.Fundamentals[item],
         }
 
 
