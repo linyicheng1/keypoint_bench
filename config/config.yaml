@@ -6,7 +6,7 @@ test:
         devices: [ 0 ]
     data:
         params:
-            data_type: hpatches
+            data_type: euroc
             batch_size: 1
             num_workers: 1
             hpatches_params:
@@ -16,11 +16,14 @@ test:
                 image_size: 512
                 gray: False
             euroc_params:
-                root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/WangShuo/datasets/EuRoC
-                gray: True
+                type: euroc
+                root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/euroc/MH_01_easy/mav0/
+                gray: False
             kitti_params:
-                root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/WangShuo/datasets/KITTI
-                gray: True
+                type: kitti
+                root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_gray/dataset/sequences/00/
+                gt: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_poses/dataset/poses/00.txt
+                gray: False
             megadepth_params:
                 root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/disk-data/megadepth
                 using_cache: True
@@ -35,7 +38,7 @@ test:
     model:
         params:
             model_type: Alike
-            task_type: VisualizeTrackingError
+            task_type: FundamentalMatrix
             Alike_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/alike-t.pth
                 c1: 8
@@ -63,7 +66,7 @@ test:
             extractor_params:
                 nms_dist: 4
                 min_score: 0.0
-                top_k: 500
+                top_k: 10
                 threshold: 0
                 border_dist: 8
             matcher_params:
@@ -89,3 +92,8 @@ test:
                     radius: 6
                     max_error: 5
                     color: 255,0,0
+            FundamentalMatrix_params:
+                save_path: /home/server/linyicheng/py_proj/keypoint_bench/fundamental_matrix.png
+                output: /home/server/linyicheng/py_proj/keypoint_bench/output/
+                th: 3
+

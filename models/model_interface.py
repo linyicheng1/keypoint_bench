@@ -21,6 +21,7 @@ from models.Harris import Harris
 # import tasks
 from tasks.VisualizeTrackingError import visualize_tracking_error, plot_tracking_error
 from tasks.repeatability import repeatability, plot_repeatability
+from tasks.FundamentalMatrix import fundamental_matrix, plot_fundamental_matrix
 
 
 class MInterface(pl.LightningModule):
@@ -53,6 +54,9 @@ class MInterface(pl.LightningModule):
         self.accuracy = None
         self.matching_score = None
         self.track_error = None
+        self.last_batch = None
+        self.fundamental_error = None
+        self.fundamental_radio = None
 
     def on_test_start(self) -> None:
         self.num_feat = []
@@ -60,6 +64,8 @@ class MInterface(pl.LightningModule):
         self.accuracy = []
         self.matching_score = []
         self.track_error = []
+        self.fundamental_error = []
+        self.fundamental_radio = []
 
     def on_test_end(self) -> None:
         self.num_feat = np.mean(self.num_feat)
@@ -76,6 +82,15 @@ class MInterface(pl.LightningModule):
             plot_tracking_error(error, self.params['VisualizeTrackingError_params']['save_path'])
             error = np.mean(error)
             print('track_error', error)
+        elif self.params['task_type'] == 'FundamentalMatrix':
+            error = torch.as_tensor(self.fundamental_error).cpu().numpy()
+            plot_fundamental_matrix(error, self.params['FundamentalMatrix_params']['save_path'])
+            error = np.mean(error)
+
+            radio = torch.as_tensor(self.fundamental_radio).cpu().numpy()
+            plot_fundamental_matrix(error, self.params['FundamentalMatrix_params']['save_path'].replace('.png', '_radio.png'))
+            radio = np.mean(radio)
+            print('fundamental_error', error, ' fundamental_radio', radio)
 
     def test_step(self, batch: Tensor, batch_idx: int) -> STEP_OUTPUT:
 
@@ -93,6 +108,7 @@ class MInterface(pl.LightningModule):
         desc_map_0 = None
         desc_map_1 = None
 
+        # image pair dataset
         if batch['dataset'][0] == 'HPatches' or batch['dataset'][0] == 'megaDepth':
             result0 = self.model(batch['image0'])
             result1 = self.model(batch['image1'])
@@ -102,6 +118,20 @@ class MInterface(pl.LightningModule):
                 desc_map_0 = result0[1].detach()
                 desc_map_1 = result1[1].detach()
 
+        # sequence dataset
+        last_img = None
+        if batch['dataset'][0] == 'Kitti' or batch['dataset'][0] == 'Euroc':
+            if self.last_batch is None:
+                self.last_batch = batch
+            result0 = self.model(self.last_batch['image0'])
+            result1 = self.model(batch['image1'])
+            score_map_0 = result0[0].detach()
+            score_map_1 = result1[0].detach()
+            if result0[1] is not None:
+                desc_map_0 = result0[1].detach()
+                desc_map_1 = result1[1].detach()
+            last_img = self.last_batch['image0']
+            self.last_batch = batch
         # task
         result = None
         if self.params['task_type'] == 'VisualizeTrackingError':
@@ -121,4 +151,19 @@ class MInterface(pl.LightningModule):
                                    warp01_params, warp10_params, self.params)
             self.num_feat.append(result['num_feat'])
             self.repeatability.append(result['repeatability'])
+        elif self.params['task_type'] == 'FundamentalMatrix':
+            if self.params['matcher_params']['type'] == 'optical_flow' and \
+                    (self.params['model_type'] != 'LETNet' or self.params['model_type'] != 'GoodPoint'):
+                # self.params['model_type'] != 'LETNet' and self.params['model_type'] != 'GoodPoint':
+                result = fundamental_matrix(batch_idx, last_img, batch,
+                                            score_map_0, score_map_1,
+                                            last_img, batch['image0'], self.params)
+                print(result['fundamental_error'], result['fundamental_radio'])
+            else:
+                result = fundamental_matrix(batch_idx, last_img, batch,
+                                            score_map_0, score_map_1,
+                                            desc_map_0, desc_map_1, self.params)
+                print(result['fundamental_error'], result['fundamental_radio'])
+            self.fundamental_error.append(result['fundamental_error'])
+            self.fundamental_radio.append(result['fundamental_radio'])
         return result

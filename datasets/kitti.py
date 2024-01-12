@@ -13,7 +13,7 @@ def pose_2_fundamental_matrix(pose, fundamental, fx, fy, cx, cy):
                       [0, 0, 1]])
     fundamental.append(torch.zeros(3, 3).unsqueeze(0))
     for i in range(len(pose) - 1):
-        dp = pp.Inv(pose[i]) * pose[i + 1]
+        dp = pp.Inv(pose[i + 1]) * pose[i]
         t_hat = torch.tensor([[0, -dp[2], dp[1]],
                               [dp[2], 0, -dp[0]],
                               [-dp[1], dp[0], 0]])
@@ -81,6 +81,8 @@ class KittiDataset(data.Dataset):
 
         img0 = img0.transpose((2, 0, 1))
         img1 = img1.transpose((2, 0, 1))
+        img0 = img0[:, 0:352, 0:1216]
+        img1 = img1[:, 0:352, 0:1216]
         return {
             'image0': img0,
             'image1': img1,
@@ -91,6 +93,7 @@ class KittiDataset(data.Dataset):
             'bf': self.bf,
             'ground_truth': self.ground_truth[item],
             'fundamental': self.Fundamentals[item],
+            'dataset': 'Kitti'
         }
 
 

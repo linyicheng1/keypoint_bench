@@ -50,7 +50,7 @@ class DInterface(LightningDataModule):
                                     params['colorjit'], params['gray'],
                                     params['crop_or_scale'])
         elif params['type'] == 'kitti':
-            return KittiDataset(params['root'], params['gray'])
+            return KittiDataset(params['root'], params['gt'], params['gray'])
         elif params['type'] == 'euroc':
             return EurocDataset(params['root'], params['gray'])
         elif params['type'] == 'uma':
