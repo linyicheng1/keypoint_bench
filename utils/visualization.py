@@ -120,6 +120,59 @@ def plot_epipolar_lines(image0: torch.tensor,
     return out
 
 
+def plot_matches(image0: torch.tensor,
+                 image1: torch.tensor,
+                 kps0: torch.tensor,
+                 kps1: torch.tensor):
+    """ visualize matches
+    :param image0: [H, W, 3] in range [0, 1]
+    :param image1: [H, W, 3] in range [0, 1]
+    :param kps0:  [N, 2] in range [H, W]
+    :param kps1:  [N, 2] in range [H, W]
+    :return: image with key points
+    """
+    image0 = image0[0].cpu().detach().numpy().transpose(1, 2, 0) if isinstance(image0, torch.Tensor) else image0
+    image1 = image1[0].cpu().detach().numpy().transpose(1, 2, 0) if isinstance(image1, torch.Tensor) else image1
+    kps0 = kps0.cpu().detach().numpy() if isinstance(kps0, torch.Tensor) else kps0
+    kps1 = kps1.cpu().detach().numpy() if isinstance(kps1, torch.Tensor) else kps1
+
+    if image0.dtype is not np.dtype('uint8'):
+        image0 = image0 * 255
+        image0 = image0.astype(np.uint8)
+
+    if image1.dtype is not np.dtype('uint8'):
+        image1 = image1 * 255
+        image1 = image1.astype(np.uint8)
+
+    if len(image0.shape) == 2 or image0.shape[2] == 1:
+        image0 = cv2.cvtColor(image0, cv2.COLOR_GRAY2RGB)
+
+    if len(image1.shape) == 2 or image1.shape[2] == 1:
+        image1 = cv2.cvtColor(image1, cv2.COLOR_GRAY2RGB)
+
+    H, W, _ = image0.shape
+    show = np.zeros((H * 2, W, 3), dtype=np.uint8)
+    show[0:H, :, :] = image0
+    show[H:2*H, :, :] = image1
+    # draw pts on image
+    for i in range(kps0.shape[0]):
+        x0, y0 = kps0[i]
+        color = (0, 255, 0)
+        cv2.drawMarker(show, (int(x0), int(y0)), color, cv2.MARKER_CROSS, 5)
+
+    for i in range(kps1.shape[0]):
+        x0, y0 = kps1[i]
+        color = (255, 0, 0)
+        cv2.drawMarker(show, (int(x0), int(y0) + H), color, cv2.MARKER_CROSS, 5)
+    # draw lines
+    for i in range(kps0.shape[0]):
+        x0, y0 = kps0[i]
+        x1, y1 = kps1[i]
+        color = (0, 0, 255)
+        cv2.line(show, (int(x0), int(y0)), (int(x1), int(y1) + H), color, 1)
+    return show
+
+
 def write_txt(filename: str,
               data: np.ndarray,
               mode: str = 'w'):

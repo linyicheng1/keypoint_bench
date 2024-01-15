@@ -66,23 +66,28 @@ class KittiDataset(data.Dataset):
 
     def __getitem__(self, item):
         img0 = cv2.imread(self.image_0_list[item], cv2.IMREAD_COLOR)
-        img1 = cv2.imread(self.image_1_list[item], cv2.IMREAD_COLOR)
+        img1 = img0
+        if len(self.image_1_list) != 0:
+            img1 = cv2.imread(self.image_1_list[item], cv2.IMREAD_COLOR)
         assert img0 is not None, 'can not load: ' + self.sequence_path
 
         if self.gray:
             img0 = cv2.cvtColor(img0, cv2.COLOR_BGR2GRAY).astype('float32') / 255.
             img0 = np.expand_dims(img0, axis=2)
-            img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY).astype('float32') / 255.
-            img1 = np.expand_dims(img1, axis=2)
+            if len(self.image_1_list) != 0:
+                img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY).astype('float32') / 255.
+                img1 = np.expand_dims(img1, axis=2)
         else:
             # bgr -> rgb
             img0 = cv2.cvtColor(img0, cv2.COLOR_BGR2RGB).astype('float32') / 255.
-            img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB).astype('float32') / 255.
+            if len(self.image_1_list) != 0:
+                img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB).astype('float32') / 255.
 
         img0 = img0.transpose((2, 0, 1))
-        img1 = img1.transpose((2, 0, 1))
         img0 = img0[:, 0:352, 0:1216]
-        img1 = img1[:, 0:352, 0:1216]
+        if len(self.image_1_list) != 0:
+            img1 = img1[:, 0:352, 0:1216]
+            img1 = img1.transpose((2, 0, 1))
         last_id = max(0, item - 1)
         return {
             'image0': img0,
@@ -104,11 +109,11 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import matplotlib
     matplotlib.use('TkAgg')
-    dataset = KittiDataset(sequence_path='/media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_gray/dataset/sequences/00/',
-                           gt_path='/media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_poses/dataset/poses/00.txt',
+    dataset = KittiDataset(sequence_path='/media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/test_imgs/sequences/00/',
+                           gt_path='/media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/test_imgs/poses/00.txt',
                            gray=True)
     for data in tqdm(dataset):
         image0 = data['image0']
-        image1 = data['image1']
+        # image1 = data['image1']
         plt.imshow(image0.transpose(1, 2, 0), cmap='gray')
         plt.show()

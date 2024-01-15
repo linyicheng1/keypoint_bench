@@ -156,11 +156,11 @@ def optical_flow_cv(pts0: torch.tensor,
     """
     if params is None:
         params = {
-            "winSize": (5, 5),
-            "maxLevel": 3,
-            "flags": cv2.OPTFLOW_USE_INITIAL_FLOW,
+            "win_size": 15,
+            "levels": 3,
         }
     # pts to pixels & numpy
+    device = img0.device
     B, C, H, W = img0.shape
     assert B == 1 and pts0.shape[0] == pts1.shape[0]
     pts0 = (pts0 * torch.tensor([W - 1, H - 1]).to(pts0)).detach().cpu().numpy().astype(np.float32)
@@ -173,15 +173,15 @@ def optical_flow_cv(pts0: torch.tensor,
     img1 = np.transpose(img1, (1, 2, 0))
 
     # optical flow
-    lk_params = dict(winSize=params["winSize"],
-                     maxLevel=params["maxLevel"],
-                     flags=params["flags"],
+    lk_params = dict(winSize=(params["win_size"], params["win_size"]),
+                     maxLevel=params["levels"],
+                     flags=cv2.OPTFLOW_USE_INITIAL_FLOW,
                      criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
     pts1_, status, _ = cv2.calcOpticalFlowPyrLK(img0, img1, pts0, pts1, **lk_params)
 
     # to tensor
-    pts1_ = torch.from_numpy(pts1_).to(pts0.device) / torch.tensor([W - 1, H - 1]).to(pts0.device)
-    return pts1_
+    pts1_ = torch.from_numpy(pts1_).to(device) / torch.tensor([W - 1, H - 1]).to(device)
+    return pts1_, status
 
 
 def optical_flow_tensor(pts0: torch.tensor,

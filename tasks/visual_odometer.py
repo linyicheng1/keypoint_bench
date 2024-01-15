@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 import torch
 from utils.extracter import detection
-from utils.matcher import optical_flow_tensor
-from utils.visualization import plot_epipolar_lines, write_txt, plot_kps_error
+from utils.matcher import optical_flow_tensor, optical_flow_cv
+from utils.visualization import plot_matches, write_txt, plot_kps_error
 
 
 def visual_odometry(step: int,
@@ -36,20 +36,26 @@ def visual_odometry(step: int,
     kps1 = detection(score_map_1, params['extractor_params'])
 
     # 2. match key points
-    kps1_wh = kps1
+
     if params['matcher_params']['type'] == 'optical_flow':
-        kps1_wh = optical_flow_tensor(kps0[:, 0:2], kps0[:, 0:2], desc_map_0,
-                                      desc_map_1, params['matcher_params']['optical_flow_params'])
+        kps1, status = optical_flow_cv(kps0[:, 0:2], kps0[:, 0:2], desc_map_0,
+                                          desc_map_1, params['matcher_params']['optical_flow_params'])
+        kps1 = kps1[np.where(status == 1)[0], :]
+        kps0 = kps0[np.where(status == 1)[0], :]
     elif params['matcher_params']['type'] == 'bf_matcher':
         pass  # TODO
 
-    # 3. compute pose
+    # 2.5. plot matches
     pts0 = kps0.cpu().numpy()
-    kps1_wh = kps1_wh[0].cpu().numpy()
+    kps1 = kps1.cpu().numpy()
 
     kps0_wh = (kps0[:, :-1] * torch.tensor([score_map_0.shape[3] - 1, score_map_0.shape[2] - 1],
                                            dtype=torch.float32).to(score_map_0.device)).cpu().numpy()
-
+    kps1_wh = kps1 * np.array([last_img.shape[3] - 1, last_img.shape[2] - 1], dtype=np.float32)
+    show = plot_matches(last_img, batch['image0'], kps0_wh, kps1_wh)
+    root = params['visual_odometer_params']['output']
+    cv2.imwrite(root + str(step) + '_matches.png', show)
+    # 3. compute pose
     pp = (float(batch['cx']), float(batch['cy']))
     E, mask = cv2.findEssentialMat(kps0_wh, kps1_wh,
                                    focal=float(batch['fx']), pp=pp,
@@ -60,9 +66,12 @@ def visual_odometry(step: int,
     ground_truth = batch['ground_truth']
     last_ground_truth = batch['last_ground_truth']
     scale = torch.norm(ground_truth.tensor()[0:3] - last_ground_truth.tensor()[0:3])
-
-    R_est = pose_R.dot(R)
-    t_est = pose_t + float(scale) * pose_R.dot(t)
+    R_est = pose_R
+    t_est = pose_t
+    # only update pose when scale is large enough
+    if scale >= 0.1:
+        R_est = pose_R.dot(R)
+        t_est = pose_t + float(scale) * pose_R.dot(t)
 
     return {"R": R_est, "t": t_est}
 
