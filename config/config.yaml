@@ -6,7 +6,7 @@ test:
         devices: [ 0 ]
     data:
         params:
-            data_type: euroc
+            data_type: tartanair
             batch_size: 1
             num_workers: 1
             hpatches_params:
@@ -35,10 +35,15 @@ test:
             uma_params:
                 root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/WangShuo/datasets/KITTI
                 gray: True
+            tartanair_params:
+                type: tartanair
+                root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/tartanair/mono/tartanair-test-mono-release/mono/ME000/
+                gt: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/tartanair/tartanair_cvpr_gt/mono_gt/ME000.txt
+                gray: False
     model:
         params:
             model_type: Alike
-            task_type: FundamentalMatrix
+            task_type: visual_odometry
             Alike_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/alike-t.pth
                 c1: 8
@@ -66,7 +71,7 @@ test:
             extractor_params:
                 nms_dist: 4
                 min_score: 0.0
-                top_k: 10
+                top_k: 500
                 threshold: 0
                 border_dist: 8
             matcher_params:
@@ -96,4 +101,6 @@ test:
                 save_path: /home/server/linyicheng/py_proj/keypoint_bench/fundamental_matrix.png
                 output: /home/server/linyicheng/py_proj/keypoint_bench/output/
                 th: 3
+            visual_odometer_params:
+                save_path: /home/server/linyicheng/py_proj/keypoint_bench/visual_odometer.png
 

@@ -7,6 +7,7 @@ from datasets.euroc import EurocDataset
 from datasets.uma import UMADataset
 from datasets.video import VideoDataset
 from datasets.images import ImagesDataset
+from datasets.tartanair import TartanAirDataset
 
 
 class DInterface(LightningDataModule):
@@ -55,6 +56,8 @@ class DInterface(LightningDataModule):
             return EurocDataset(params['root'], params['gray'])
         elif params['type'] == 'uma':
             return UMADataset(params['root'], params['gray'])
+        elif params['type'] == 'tartanair':
+            return TartanAirDataset(params['root'], params['gt'], params['gray'])
         elif params['type'] == 'video':
             return VideoDataset(params['root'], params['gray'])
         elif params['type'] == 'images':

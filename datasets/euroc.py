@@ -170,11 +170,13 @@ class EurocDataset(data.Dataset):
         # size
         img0 = img0[:, :, 0:736]
         img1 = img1[:, :, 0:736]
+        last_id = max(0, item - 1)
         return {
             'image0': img0,
             'image1': img1,
             'timestamp': self.cam0_timestamps[item],
             'ground_truth': self.ground_truth[item],
+            'last_ground_truth': self.ground_truth[last_id],
             'fundamental': self.Fundamentals[item],
             'fx': self.fx,
             'fy': self.fy,

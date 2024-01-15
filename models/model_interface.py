@@ -22,6 +22,7 @@ from models.Harris import Harris
 from tasks.VisualizeTrackingError import visualize_tracking_error, plot_tracking_error
 from tasks.repeatability import repeatability, plot_repeatability
 from tasks.FundamentalMatrix import fundamental_matrix, plot_fundamental_matrix
+from tasks.visual_odometer import visual_odometry, plot_visual_odometry
 
 
 class MInterface(pl.LightningModule):
@@ -57,6 +58,8 @@ class MInterface(pl.LightningModule):
         self.last_batch = None
         self.fundamental_error = None
         self.fundamental_radio = None
+        self.r_est = None
+        self.t_est = None
 
     def on_test_start(self) -> None:
         self.num_feat = []
@@ -66,6 +69,8 @@ class MInterface(pl.LightningModule):
         self.track_error = []
         self.fundamental_error = []
         self.fundamental_radio = []
+        self.r_est = [np.eye(3)]
+        self.t_est = [np.zeros([3, 1])]
 
     def on_test_end(self) -> None:
         self.num_feat = np.mean(self.num_feat)
@@ -88,9 +93,15 @@ class MInterface(pl.LightningModule):
             error = np.mean(error)
 
             radio = torch.as_tensor(self.fundamental_radio).cpu().numpy()
-            plot_fundamental_matrix(error, self.params['FundamentalMatrix_params']['save_path'].replace('.png', '_radio.png'))
+            plot_fundamental_matrix(radio, self.params['FundamentalMatrix_params']['save_path'].replace('.png', '_radio.png'))
             radio = np.mean(radio)
             print('fundamental_error', error, ' fundamental_radio', radio)
+        elif self.params['task_type'] == 'visual_odometry':
+            self.r_est = torch.as_tensor(self.r_est).cpu().numpy()
+            self.t_est = torch.as_tensor(self.t_est).cpu().numpy()
+            np.save(self.params['visual_odometer_params']['save_path'].replace('.png', '_r_est.npy'), self.r_est)
+            np.save(self.params['visual_odometer_params']['save_path'].replace('.png', '_t_est.npy'), self.t_est)
+            plot_visual_odometry(self.r_est, self.t_est, self.params['visual_odometer_params']['save_path'])
 
     def test_step(self, batch: Tensor, batch_idx: int) -> STEP_OUTPUT:
 
@@ -120,11 +131,12 @@ class MInterface(pl.LightningModule):
 
         # sequence dataset
         last_img = None
-        if batch['dataset'][0] == 'Kitti' or batch['dataset'][0] == 'Euroc':
+
+        if batch['dataset'][0] == 'Kitti' or batch['dataset'][0] == 'Euroc' or batch['dataset'][0] == 'TartanAir':
             if self.last_batch is None:
                 self.last_batch = batch
             result0 = self.model(self.last_batch['image0'])
-            result1 = self.model(batch['image1'])
+            result1 = self.model(batch['image0'])
             score_map_0 = result0[0].detach()
             score_map_1 = result1[0].detach()
             if result0[1] is not None:
@@ -166,4 +178,19 @@ class MInterface(pl.LightningModule):
                 print(result['fundamental_error'], result['fundamental_radio'])
             self.fundamental_error.append(result['fundamental_error'])
             self.fundamental_radio.append(result['fundamental_radio'])
+        elif self.params['task_type'] == 'visual_odometry':
+            if self.params['matcher_params']['type'] == 'optical_flow' and \
+                    (self.params['model_type'] != 'LETNet' or self.params['model_type'] != 'GoodPoint'):
+                # self.params['model_type'] != 'LETNet' and self.params['model_type'] != 'GoodPoint':
+                result = visual_odometry(batch_idx, self.r_est[-1], self.t_est[-1],
+                                         last_img, batch,
+                                         score_map_0, score_map_1,
+                                         last_img, batch['image0'], self.params)
+            else:
+                result = visual_odometry(batch_idx, self.r_est[-1], self.t_est[-1],
+                                         last_img, batch,
+                                         score_map_0, score_map_1,
+                                         desc_map_0, desc_map_1, self.params)
+            self.r_est.append(result['R'])
+            self.t_est.append(result['t'])
         return result

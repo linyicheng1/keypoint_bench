@@ -50,16 +50,17 @@ def fundamental_matrix(step: int,
     error = error / I
 
     th = params['FundamentalMatrix_params']['th']
-    kps1[:, :-1] = kps1[:, :-1] / torch.tensor([score_map_0.shape[3] - 1, score_map_0.shape[2] - 1], dtype=torch.float32).to(score_map_0.device)
-    show = plot_epipolar_lines(batch['image0'], kps0[:, :-1], kps1[:, :-1], batch['fundamental'][0])
-    root = params['repeatability_params']['output']
-    cv2.imwrite(root + str(step) + '_epipolar.png', show)
+
+    # kps1[:, :-1] = kps1[:, :-1] / torch.tensor([score_map_0.shape[3] - 1, score_map_0.shape[2] - 1], dtype=torch.float32).to(score_map_0.device)
+    # show = plot_epipolar_lines(batch['image0'], kps0[:, :-1], kps1[:, :-1], batch['fundamental'][0])
+    # root = params['repeatability_params']['output']
+    # cv2.imwrite(root + str(step) + '_epipolar.png', show)
 
     # show = plot_epipolar_lines(batch['image0'], kps0[:, :-1], kps1[:, :-1], f)
     # cv2.imwrite(root + str(step) + '_epipolar_2.png', show)
 
-    show = plot_kps_error(last_img, kps0)
-    cv2.imwrite(root + str(step) + '_epipolar_0.png', show)
+    # show = plot_kps_error(last_img, kps0)
+    # cv2.imwrite(root + str(step) + '_epipolar_0.png', show)
 
     radio = (error < th).sum().item() / error.shape[0]
 
