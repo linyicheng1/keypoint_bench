@@ -32,6 +32,15 @@ def read_gt_csv(path, ground_truth):
             ground_truth.append(p)
 
 
+def write_kitti_pose(path, poses):
+    with open(path, 'w') as f:
+        for pose in poses:
+            m = pose.matrix()
+            f.write(str(float(m[0, 0])) + ' ' + str(float(m[0, 1])) + ' ' + str(float(m[0, 2])) + ' ' + str(float(m[0, 3])) + ' ' +
+                    str(float(m[1, 0])) + ' ' + str(float(m[1, 1])) + ' ' + str(float(m[1, 2])) + ' ' + str(float(m[1, 3])) + ' ' +
+                    str(float(m[2, 0])) + ' ' + str(float(m[2, 1])) + ' ' + str(float(m[2, 2])) + ' ' + str(float(m[2, 3])) + '\n')
+
+
 class TartanAirDataset(data.Dataset):
 
     def __init__(self, sequence_path="", gt_path="", gray=False):
@@ -55,6 +64,9 @@ class TartanAirDataset(data.Dataset):
             pose_2_fundamental_matrix(self.ground_truth, self.Fundamentals, self.fx, self.fy, self.cx, self.cy)
             fundamentals = torch.cat(self.Fundamentals, dim=0)
             torch.save(fundamentals, self.fundamental_path)
+        kitti_gt = gt_path.replace('.txt', '_kitti.txt')
+        if not os.path.exists(kitti_gt):
+            write_kitti_pose(kitti_gt, self.ground_truth)
 
     def __len__(self):
         return len(self.image_0_list)

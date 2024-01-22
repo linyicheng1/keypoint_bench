@@ -185,3 +185,21 @@ def write_txt(filename: str,
     with open(filename, mode) as f:
         for i in range(data.shape[0]):
             f.write(str(data[i]) + '\n')
+
+
+def write_position(filename: str,
+                   r, t,
+                   mode: str = 'w'):
+    """ write data to txt file
+    :param filename: filename
+    :param r: rotation matrix
+    :param t: translation vector
+    :param mode: 'w' or 'a'
+    :return:
+    """
+    with open(filename, mode) as f:
+        for i in range(t.shape[0] - 1):
+            # kitti format [R|t]
+            f.write(str(r[i + 1, 0, 0]) + ' ' + str(r[i + 1, 0, 1]) + ' ' + str(r[i + 1, 0, 2]) + ' ' + str(t[i + 1, 0, 0]) + ' ' +
+                    str(r[i + 1, 1, 0]) + ' ' + str(r[i + 1, 1, 1]) + ' ' + str(r[i + 1, 1, 2]) + ' ' + str(t[i + 1, 1, 0]) + ' ' +
+                    str(r[i + 1, 2, 0]) + ' ' + str(r[i + 1, 2, 1]) + ' ' + str(r[i + 1, 2, 2]) + ' ' + str(t[i + 1, 2, 0]) + '\n')

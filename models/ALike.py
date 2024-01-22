@@ -165,10 +165,26 @@ class ALNet(nn.Module):
 
 if __name__ == '__main__':
     from thop import profile
-    net = ALNet(c1=8, c2=16, c3=32, c4=64, dim=64, single_head=True)
+
+    param = {'c1': 8, 'c2': 16, 'c3': 32, 'c4': 64, 'dim': 64}
+    net = ALNet(param)
     weight = torch.load('../weights/alike-t.pth')
     net.load_state_dict(weight)
     image = torch.randn(1, 3, 512, 512)
     flops, params = profile(net, inputs=(image,))
     print('{:<30}  {:<8} GFLops'.format('Computational complexity: ', flops / 1e9))
     print('{:<30}  {:<8} KB'.format('Number of parameters: ', params / 1e3))
+
+    # x = image.to('cuda')
+    # model = net.to('cuda')
+    # import time
+    #
+    # for i in range(100):
+    #     scores, _ = model(x)
+    #
+    # start = time.time()
+    # for i in range(1000):
+    #     scores, _ = model(x)
+    # end = time.time()
+    #
+    # print('Inference time: ', (end - start) / 1000 * 1000, 'ms')

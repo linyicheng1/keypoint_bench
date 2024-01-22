@@ -6,7 +6,7 @@ test:
         devices: [ 1 ]
     data:
         params:
-            data_type: kitti
+            data_type: hpatches
             batch_size: 1
             num_workers: 1
             hpatches_params:
@@ -21,8 +21,8 @@ test:
                 gray: False
             kitti_params:
                 type: kitti
-                root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_gray/dataset/sequences/00/
-                gt: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_poses/dataset/poses/00.txt
+                root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_gray/dataset/sequences/01/
+                gt: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_poses/dataset/poses/01.txt
                 gray: False
             megadepth_params:
                 root: /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/disk-data/megadepth
@@ -43,7 +43,7 @@ test:
     model:
         params:
             model_type: GoodPoint
-            task_type: visual_odometry
+            task_type: repeatability
             Alike_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/alike-t.pth
                 c1: 8
@@ -69,7 +69,7 @@ test:
                 ksize: 3
                 k: 0.04
             extractor_params:
-                nms_dist: 4
+                nms_dist: 6
                 min_score: 0.0
                 top_k: 500
                 threshold: 0
@@ -78,19 +78,19 @@ test:
                 type: optical_flow
                 optical_flow_params:
                     distance: 10
-                    win_size: 15
+                    win_size: 21
                     levels: 3
                     interation: 40
                     gray: False
             VisualizeTrackingError_params:
-                save_path: /home/server/linyicheng/py_proj/keypoint_bench/tracking_error.png
+                save_path: /home/server/linyicheng/py_proj/keypoint_bench/track/good_f_i.png
                 output: /home/server/linyicheng/py_proj/keypoint_bench/output/
                 image:
                     radius: 12
                     max_error: 5
                     color: 255,0,0
             repeatability_params:
-                save_path: /home/server/linyicheng/py_proj/keypoint_bench/harris.png
+                save_path: /home/server/linyicheng/py_proj/keypoint_bench/repet/alike_v.png
                 output: /home/server/linyicheng/py_proj/keypoint_bench/output/
                 th: 3
                 image:
@@ -98,10 +98,10 @@ test:
                     max_error: 5
                     color: 255,0,0
             FundamentalMatrix_params:
-                save_path: /home/server/linyicheng/py_proj/keypoint_bench/fundamental_matrix.png
+                save_path: /home/server/linyicheng/py_proj/keypoint_bench/fund/good_e_0.png
                 output: /home/server/linyicheng/py_proj/keypoint_bench/output/
                 th: 3
             visual_odometer_params:
-                save_path: /home/server/linyicheng/py_proj/keypoint_bench/visual_odometer.png
+                save_path: /home/server/linyicheng/py_proj/keypoint_bench/fund/alike_e_0.png
                 output: /home/server/linyicheng/py_proj/keypoint_bench/output/
 

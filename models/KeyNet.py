@@ -147,3 +147,18 @@ if __name__ == '__main__':
     flops, params = profile(model, inputs=(x,))
     print('{:<30}  {:<8} GFLops'.format('Computational complexity: ', flops / 1e9))
     print('{:<30}  {:<8} KB'.format('Number of parameters: ', params / 1e3))
+
+    # inference time
+    x = x.to('cuda')
+    model = model.to('cuda')
+    import time
+
+    for i in range(100):
+        scores, _ = model(x)
+
+    start = time.time()
+    for i in range(1000):
+        scores, _ = model(x)
+    end = time.time()
+
+    print('Inference time: ', (end - start) / 1000 * 1000, 'ms')

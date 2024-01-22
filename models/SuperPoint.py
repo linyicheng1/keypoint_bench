@@ -35,6 +35,10 @@ class SuperPointNet(torch.nn.Module):
       semi: Output point pytorch tensor shaped N x 65 x H/8 x W/8.
       desc: Output descriptor pytorch tensor shaped N x 256 x H/8 x W/8.
     """
+        B, C, H, W = x.shape
+        Hc = int(H / 8)
+        Wc = int(W / 8)
+        x = torch.sum(x, dim=1, keepdim=True)
         # Shared Encoder.
         x = self.relu(self.conv1a(x))
         x = self.relu(self.conv1b(x))
@@ -55,7 +59,15 @@ class SuperPointNet(torch.nn.Module):
         desc = self.convDb(cDa)
         dn = torch.norm(desc, p=2, dim=1)  # Compute the norm.
         desc = desc.div(torch.unsqueeze(dn, 1))  # Divide by norm to normalize.
-        return semi, desc
+
+        # addition semi to score map
+        dense = torch.softmax(semi, dim=1)
+        nodust = dense[:, :-1, :, :].permute(0, 2, 3, 1)
+        heatmap = torch.reshape(nodust, [B, Hc, Wc, 8, 8])
+        heatmap = heatmap.permute(0, 1, 3, 2, 4)
+        heatmap = torch.reshape(heatmap, [B, 1, Hc * 8, Wc * 8])
+
+        return heatmap, desc
 
 
 class SuperPoint(object):
@@ -111,3 +123,16 @@ if __name__ == '__main__':
     flops, params = profile(net, inputs=(image,))
     print('{:<30}  {:<8} GFLops'.format('Computational complexity: ', flops / 1e9))
     print('{:<30}  {:<8} KB'.format('Number of parameters: ', params / 1e3))
+
+    x = image.to('cuda')
+    model = net.to('cuda')
+    import time
+    for i in range(100):
+        scores, _ = model(x)
+
+    start = time.time()
+    for i in range(1000):
+        scores, _ = model(x)
+    end = time.time()
+
+    print('Inference time: ', (end - start) / 1000 * 1000, 'ms')

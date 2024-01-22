@@ -62,6 +62,7 @@ def val_key_points(kps0, kps1, warp01, warp10, th: int = 3):
         return {
             'num_feat': 0,
             'repeatability': 0,
+            'mean_error': 0,
         }
     # ==================================== get gt matching keypoints
     dist01 = compute_keypoints_distance(kps0_cov, kps10_cov)
@@ -76,10 +77,12 @@ def val_key_points(kps0, kps1, warp01, warp10, th: int = 3):
     else:
         dist = dist * warp01['width']
     gt_num = (dist <= th).sum().cpu()  # number of gt matching keypoints
-
+    error = dist[dist <= th].cpu().numpy()
+    mean_error = error.mean()
     return {
         'num_feat': num_feat,
         'repeatability': gt_num / num_feat,
+        'mean_error': mean_error,
     }
 
 

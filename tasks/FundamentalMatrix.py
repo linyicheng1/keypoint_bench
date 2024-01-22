@@ -63,8 +63,8 @@ def fundamental_matrix(step: int,
     # cv2.imwrite(root + str(step) + '_epipolar_0.png', show)
 
     radio = (error < th).sum().item() / error.shape[0]
-
-    return {"fundamental_error": torch.mean(error), "fundamental_radio": radio}
+    num = (error < th).sum().item()
+    return {"fundamental_error": torch.mean(error), "fundamental_radio": radio, "fundamental_num": num}
 
 
 def plot_fundamental_matrix(error, save_path):

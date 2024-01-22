@@ -56,6 +56,15 @@ def integrate_imu(imu_timestamps, imu_raw, cam0_timestamps, imu_integrate):
     # print(len(states))
 
 
+def write_kitti_pose(path, poses):
+    with open(path, 'w') as f:
+        for pose in poses:
+            m = pose.matrix()
+            f.write(str(float(m[0, 0])) + ' ' + str(float(m[0, 1])) + ' ' + str(float(m[0, 2])) + ' ' + str(float(m[0, 3])) + ' ' +
+                    str(float(m[1, 0])) + ' ' + str(float(m[1, 1])) + ' ' + str(float(m[1, 2])) + ' ' + str(float(m[1, 3])) + ' ' +
+                    str(float(m[2, 0])) + ' ' + str(float(m[2, 1])) + ' ' + str(float(m[2, 2])) + ' ' + str(float(m[2, 3])) + '\n')
+
+
 def pose_2_fundamental_matrix(pose, fundamental, fx, fy, cx, cy):
     k = torch.tensor([[fx, 0, cx],
                       [0, fy, cy],
@@ -126,7 +135,8 @@ class EurocDataset(data.Dataset):
 
         convert_to_camera_frame(ground_truth_timestamps, ground_truth_raw,
                                 self.ground_truth, self.cam0_timestamps)
-
+        if not os.path.exists(self.root + 'groundtruth.txt'):
+            write_kitti_pose(self.root + 'groundtruth.txt', self.ground_truth)
         if os.path.exists(self.fundamentals_csv):
             self.Fundamentals = torch.load(self.fundamentals_csv)
         else:
@@ -192,9 +202,9 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import matplotlib
     matplotlib.use('TkAgg')
-    dataset = EurocDataset(root='/media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/euroc/MH_01_easy/mav0/', gray=True)
-    for data in tqdm(dataset):
-        image0 = data['image0']
-        image1 = data['image1']
-        plt.imshow(image0.transpose(1, 2, 0), cmap='gray')
-        plt.show()
+    dataset = EurocDataset(root='/media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/euroc/V2_01_easy/mav0/', gray=True)
+    # for data in tqdm(dataset):
+    #     image0 = data['image0']
+    #     image1 = data['image1']
+    #     plt.imshow(image0.transpose(1, 2, 0), cmap='gray')
+    #     plt.show()

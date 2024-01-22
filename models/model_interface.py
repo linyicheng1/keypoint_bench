@@ -15,7 +15,7 @@ from models.ALike import ALNet
 from models.GoodPoint import GoodPoint
 from models.KeyNet import KeyNet
 from models.LETNet import LETNet
-from models.SuperPoint import SuperPoint
+from models.SuperPoint import SuperPointNet
 from models.Harris import Harris
 
 # import tasks
@@ -44,7 +44,8 @@ class MInterface(pl.LightningModule):
         elif params['model_type'] == 'LETNet':
             self.model = LETNet(params['LETNet_params'])
         elif params['model_type'] == 'SuperPoint':
-            self.model = SuperPoint(params['SuperPoint_params'])
+            self.model = SuperPointNet()
+            self.model.load_state_dict(torch.load(params['SuperPoint_params']['weight']))
         elif params['model_type'] == 'Harris':
             self.model = Harris(params['Harris_params'])
         else:
@@ -52,23 +53,27 @@ class MInterface(pl.LightningModule):
         self.model.eval()
         self.num_feat = None
         self.repeatability = None
+        self.rep_mean_err = None
         self.accuracy = None
         self.matching_score = None
         self.track_error = None
         self.last_batch = None
         self.fundamental_error = None
         self.fundamental_radio = None
+        self.fundamental_num = None
         self.r_est = None
         self.t_est = None
 
     def on_test_start(self) -> None:
         self.num_feat = []
         self.repeatability = []
+        self.rep_mean_err = []
         self.accuracy = []
         self.matching_score = []
         self.track_error = []
         self.fundamental_error = []
         self.fundamental_radio = []
+        self.fundamental_num = []
         self.r_est = [np.eye(3)]
         self.t_est = [np.zeros([3, 1])]
 
@@ -76,12 +81,17 @@ class MInterface(pl.LightningModule):
         self.num_feat = np.mean(self.num_feat)
         self.accuracy = np.mean(self.accuracy)
         self.matching_score = np.mean(self.matching_score)
-
+        print('task: ', self.params['task_type'])
         if self.params['task_type'] == 'repeatability':
             rep = torch.as_tensor(self.repeatability).cpu().numpy()
             plot_repeatability(rep, self.params['repeatability_params']['save_path'])
             rep = np.mean(rep)
-            print('repeatability', rep)
+
+            error = torch.as_tensor(self.rep_mean_err).cpu().numpy()
+            error = error[~np.isnan(error)]
+            plot_repeatability(error, self.params['repeatability_params']['save_path'].replace('.png', '_error.png'))
+            error = np.mean(error)
+            print('repeatability', rep, ' rep_mean_err', error)
         elif self.params['task_type'] == 'VisualizeTrackingError':
             error = torch.as_tensor(self.track_error).cpu().numpy()
             plot_tracking_error(error, self.params['VisualizeTrackingError_params']['save_path'])
@@ -95,7 +105,12 @@ class MInterface(pl.LightningModule):
             radio = torch.as_tensor(self.fundamental_radio).cpu().numpy()
             plot_fundamental_matrix(radio, self.params['FundamentalMatrix_params']['save_path'].replace('.png', '_radio.png'))
             radio = np.mean(radio)
-            print('fundamental_error', error, ' fundamental_radio', radio)
+
+            num = torch.as_tensor(self.fundamental_num).cpu().numpy()
+            plot_fundamental_matrix(num, self.params['FundamentalMatrix_params']['save_path'].replace('.png', '_num.png'))
+            num = np.mean(num)
+
+            print('fundamental_error', error, ' fundamental_radio', radio, ' fundamental_num', num)
         elif self.params['task_type'] == 'visual_odometry':
             self.r_est = torch.as_tensor(self.r_est).cpu().numpy()
             self.t_est = torch.as_tensor(self.t_est).cpu().numpy()
@@ -147,8 +162,8 @@ class MInterface(pl.LightningModule):
         # task
         result = None
         if self.params['task_type'] == 'VisualizeTrackingError':
-            if self.params['model_type'] == 'LETNet':
-            # if self.params['model_type'] == 'LETNet' or self.params['model_type'] == 'GoodPoint':
+            # if self.params['model_type'] == 'LETNet':
+            if self.params['model_type'] == 'LETNet' or self.params['model_type'] == 'GoodPoint':
                 result = visualize_tracking_error(batch_idx, batch['image0'], score_map_0,
                                                   desc_map_0, desc_map_1,
                                                   self.params, warp01_params)
@@ -163,25 +178,26 @@ class MInterface(pl.LightningModule):
                                    warp01_params, warp10_params, self.params)
             self.num_feat.append(result['num_feat'])
             self.repeatability.append(result['repeatability'])
+            self.rep_mean_err.append(result['mean_error'])
         elif self.params['task_type'] == 'FundamentalMatrix':
             if self.params['matcher_params']['type'] == 'optical_flow' and \
-                    (self.params['model_type'] != 'LETNet' or self.params['model_type'] != 'GoodPoint'):
+                    (self.params['model_type'] != 'LETNet' and self.params['model_type'] != 'GoodPoint'):
                 # self.params['model_type'] != 'LETNet' and self.params['model_type'] != 'GoodPoint':
                 result = fundamental_matrix(batch_idx, last_img, batch,
                                             score_map_0, score_map_1,
                                             last_img, batch['image0'], self.params)
-                print(result['fundamental_error'], result['fundamental_radio'])
+                # print(result['fundamental_error'], result['fundamental_radio'])
             else:
                 result = fundamental_matrix(batch_idx, last_img, batch,
                                             score_map_0, score_map_1,
                                             desc_map_0, desc_map_1, self.params)
-                print(result['fundamental_error'], result['fundamental_radio'])
+                # print(result['fundamental_error'], result['fundamental_radio'])
             self.fundamental_error.append(result['fundamental_error'])
             self.fundamental_radio.append(result['fundamental_radio'])
+            self.fundamental_num.append(result['fundamental_num'])
         elif self.params['task_type'] == 'visual_odometry':
             if self.params['matcher_params']['type'] == 'optical_flow' and \
                     (self.params['model_type'] != 'LETNet' or self.params['model_type'] != 'GoodPoint'):
-                # self.params['model_type'] != 'LETNet' and self.params['model_type'] != 'GoodPoint':
                 result = visual_odometry(batch_idx, self.r_est[-1], self.t_est[-1],
                                          last_img, batch,
                                          score_map_0, score_map_1,

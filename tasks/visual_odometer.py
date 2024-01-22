@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from utils.extracter import detection
 from utils.matcher import optical_flow_tensor, optical_flow_cv
-from utils.visualization import plot_matches, write_txt, plot_kps_error
+from utils.visualization import plot_matches, write_position, plot_kps_error
 
 
 def visual_odometry(step: int,
@@ -69,13 +69,16 @@ def visual_odometry(step: int,
     R_est = pose_R
     t_est = pose_t
     # only update pose when scale is large enough
-    if scale >= 0.1:
+    if scale >= 0.001:
         R_est = pose_R.dot(R)
         t_est = pose_t + float(scale) * pose_R.dot(t)
 
     return {"R": R_est, "t": t_est}
 
 
+# evo tools for kitti
+#  evo_ape kitti ../traj/good.txt /media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_poses/dataset/poses/00.txt -a
+# evo_traj kitti ../traj/good.txt --ref=/media/server/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_poses/dataset/poses/00.txt -p --plot_mode=xz
 def plot_visual_odometry(r, t, save_path):
     import matplotlib.pyplot as plt
 
@@ -87,8 +90,7 @@ def plot_visual_odometry(r, t, save_path):
     ax1.plot3D(x, y, z)  # 绘制空间曲线
     plt.show()
 
-    write_txt(save_path.replace('.png', '_r.txt'), r)
-    write_txt(save_path.replace('.png', '_t.txt'), t)
+    write_position(save_path.replace('.png', '.txt'), r, t)
 
 
 if __name__ == '__main__':
