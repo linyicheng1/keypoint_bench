@@ -63,6 +63,7 @@ def val_key_points(kps0, kps1, warp01, warp10, th: int = 3):
             'num_feat': 0,
             'repeatability': 0,
             'mean_error': 0,
+            'errors': None,
         }
     # ==================================== get gt matching keypoints
     dist01 = compute_keypoints_distance(kps0_cov, kps10_cov)
@@ -74,15 +75,20 @@ def val_key_points(kps0, kps1, warp01, warp10, th: int = 3):
     dist = dist_mutual[mutual_min_indices]
     if 'resize' in warp01:
         dist = dist * warp01['resize']
+        dist_mutual = dist_mutual * warp10['resize']
     else:
         dist = dist * warp01['width']
+        dist_mutual = dist_mutual * warp10['width']
     gt_num = (dist <= th).sum().cpu()  # number of gt matching keypoints
     error = dist[dist <= th].cpu().numpy()
     mean_error = error.mean()
+    errors = torch.min(dist_mutual, dim=1)[0]
+
     return {
         'num_feat': num_feat,
         'repeatability': gt_num / num_feat,
         'mean_error': mean_error,
+        'errors': errors,
     }
 
 
@@ -108,7 +114,7 @@ def repeatability(idx, img_0, score_map_0, img_1, score_map_1, warp01, warp10, p
     # 2. validation
     result = val_key_points(kps0, kps1, warp01, warp10, th=params['repeatability_params']['th'])
     # 3. save image
-    show = plot_kps_error(img_0, kps0, None, params['repeatability_params']['image'])
+    show = plot_kps_error(img_0, kps0, result['errors'], params['repeatability_params']['image'])
     root = params['repeatability_params']['output']
     cv2.imwrite(root + str(idx) + '_repeatability_0.png', show)
     show = plot_kps_error(img_1, kps1, None, params['repeatability_params']['image'])

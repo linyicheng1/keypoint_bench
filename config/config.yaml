@@ -95,7 +95,7 @@ test:
                 th: 3
                 image:
                     radius: 6
-                    max_error: 5
+                    max_error: 3
                     color: 255,0,0
             FundamentalMatrix_params:
                 save_path: /home/server/linyicheng/py_proj/keypoint_bench/fund/good_e_0.png

@@ -40,13 +40,19 @@ def plot_kps_error(image: torch.tensor,
         x0, y0 = pts[i]
         color = params['color'].split(',')
         color = (int(color[0]), int(color[1]), int(color[2]))
+        # print(error)
         if error is not None:
-            e = int(error[i] * 255. / params['max_error'])
-            if e < 127:
-                color = (0, 255 - 2*e, e*2)
+            if i >= error.shape[0] or error[i] > 3:
+                color = (0, 0, 255)
             else:
-                e = e - 127
-                color = (2*e, 0, 255 - e*2)
+                color = (0, 255, 0)
+            # e = int(error[i] * 255. / params['max_error'])
+            # if e < 127:
+            #     color = (0, 255 - 2*e, e*2)
+            # else:
+            #     e = e - 127
+            #     color = (2*e, 0, 255 - e*2)
+            # color = (e, 0, 255 - e)
         cv2.drawMarker(out, (x0, y0), color, cv2.MARKER_CROSS, params['radius'])
     return out
 
