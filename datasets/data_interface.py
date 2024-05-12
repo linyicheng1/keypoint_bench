@@ -8,6 +8,7 @@ from datasets.uma import UMADataset
 from datasets.video import VideoDataset
 from datasets.images import ImagesDataset
 from datasets.tartanair import TartanAirDataset
+from datasets.image_pairs import ImagePairsDataset
 
 
 class DInterface(LightningDataModule):
@@ -62,6 +63,9 @@ class DInterface(LightningDataModule):
             return VideoDataset(params['root'], params['gray'])
         elif params['type'] == 'images':
             return ImagesDataset(params['root'], params['gray'])
+        elif params['type'] == 'image_pair':
+            resize = [params['image_size'], params['image_size']] if 'image_size' in params else None
+            return ImagePairsDataset(params['root'], params['gray'], resize)
         else:
             raise ValueError('Invalid dataset type')
 

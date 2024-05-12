@@ -17,11 +17,13 @@ from models.KeyNet import KeyNet
 from models.LETNet import LETNet
 from models.SuperPoint import SuperPointNet
 from models.Harris import Harris
+from models.D2_Net import D2Net
+from models.XFeat import XFeatModel
 
 # import tasks
 from tasks.VisualizeTrackingError import visualize_tracking_error, plot_tracking_error
 from tasks.repeatability import repeatability, plot_repeatability
-from tasks.FundamentalMatrix import fundamental_matrix, plot_fundamental_matrix
+from tasks.FundamentalMatrix import fundamental_matrix, plot_fundamental_matrix, fundamental_matrix_ransac
 from tasks.visual_odometer import visual_odometry, plot_visual_odometry
 
 
@@ -46,6 +48,11 @@ class MInterface(pl.LightningModule):
         elif params['model_type'] == 'SuperPoint':
             self.model = SuperPointNet()
             self.model.load_state_dict(torch.load(params['SuperPoint_params']['weight']))
+        elif params['model_type'] == 'D2Net':
+            self.model = D2Net(model_file=params['D2Net_params']['weight'])
+        elif params['model_type'] == 'XFeat':
+            self.model = XFeatModel()
+            self.model.load_state_dict(torch.load(params['XFeat_params']['weight']))
         elif params['model_type'] == 'Harris':
             self.model = Harris(params['Harris_params'])
         else:
@@ -135,7 +142,9 @@ class MInterface(pl.LightningModule):
         desc_map_1 = None
 
         # image pair dataset
-        if batch['dataset'][0] == 'HPatches' or batch['dataset'][0] == 'megaDepth':
+        if batch['dataset'][0] == 'HPatches' or \
+           batch['dataset'][0] == 'megaDepth' or \
+           batch['dataset'][0] == 'image_pair':
             result0 = self.model(batch['image0'])
             result1 = self.model(batch['image1'])
             score_map_0 = result0[0].detach()
@@ -195,6 +204,11 @@ class MInterface(pl.LightningModule):
             self.fundamental_error.append(result['fundamental_error'])
             self.fundamental_radio.append(result['fundamental_radio'])
             self.fundamental_num.append(result['fundamental_num'])
+        elif self.params['task_type'] == 'FundamentalMatrixRansac':
+            result = fundamental_matrix_ransac(batch_idx, batch['image0'], batch['image1'],
+                                               score_map_0, score_map_1,
+                                               desc_map_0, desc_map_1, self.params)
+            self.fundamental_radio.append(result['fundamental_radio'])
         elif self.params['task_type'] == 'visual_odometry':
             if self.params['matcher_params']['type'] == 'optical_flow' and \
                     (self.params['model_type'] != 'LETNet' or self.params['model_type'] != 'GoodPoint'):

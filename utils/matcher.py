@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import torch
+from skimage.feature import match_descriptors
 
 
 class OpticalFlow(object):
@@ -202,4 +203,32 @@ def optical_flow_tensor(pts0: torch.tensor,
     return pts1_
 
 
-
+def brute_force_matcher(pts0: torch.tensor,
+                        pts1: torch.tensor,
+                        desc_map_0: torch.tensor,
+                        desc_map_1: torch.tensor,
+                        params=None):
+    """
+    :param pts0: (n, 2) in [0, 1]
+    :param pts1: (m, 2) in [0, 1]
+    :param desc_map_0: (b, c, h, w)
+    :param desc_map_1: (b, c, h, w)
+    :param params: None
+    :return:
+    pts0: (k, 2) in [0, 1]
+    pts1: (k, 2) in [0, 1]
+    """
+    pts0_ = (pts0[:, :2] - 0.5) * 2
+    pts1_ = (pts1[:, :2] - 0.5) * 2
+    desc0 = torch.nn.functional.grid_sample(desc_map_0, pts0_.unsqueeze(0).unsqueeze(0), align_corners=True).squeeze(2)
+    desc1 = torch.nn.functional.grid_sample(desc_map_1, pts1_.unsqueeze(0).unsqueeze(0), align_corners=True).squeeze(2)
+    desc0 = desc0.permute(0, 2, 1)[0]
+    desc1 = desc1.permute(0, 2, 1)[0]
+    matches = match_descriptors(desc0.detach().cpu().numpy(), desc1.detach().cpu().numpy(),
+                                metric=params['metric'],
+                                max_distance=params['max_distance'],
+                                cross_check=params['cross_check'])
+    matches = torch.from_numpy(matches).to(pts0.device)
+    pts0 = pts0[matches[:, 0]]
+    pts1 = pts1[matches[:, 1]]
+    return pts0, pts1
