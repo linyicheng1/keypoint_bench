@@ -3,6 +3,7 @@ from torch import nn
 from typing import Optional, Callable
 import torch.nn.functional as F
 from torchvision.models import resnet
+from utils.export import export_model
 
 
 class ConvBlock(nn.Module):
@@ -174,7 +175,7 @@ if __name__ == '__main__':
     flops, params = profile(net, inputs=(image,))
     print('{:<30}  {:<8} GFLops'.format('Computational complexity: ', flops / 1e9))
     print('{:<30}  {:<8} KB'.format('Number of parameters: ', params / 1e3))
-
+    # export_model(net, '/home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/Alike')
     # x = image.to('cuda')
     # model = net.to('cuda')
     # import time
