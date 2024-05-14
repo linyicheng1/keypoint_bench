@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from utils.export import export_model
 
 
 class BasicLayer(nn.Module):
@@ -144,7 +145,10 @@ if __name__ == '__main__':
     net = XFeatModel()
     weight = torch.load('../weights/xfeat.pt')
     net.load_state_dict(weight)
-    image = torch.randn(1, 3, 512, 512)
-    flops, params = profile(net, inputs=(image,))
-    print('{:<30}  {:<8} GFLops'.format('Computational complexity: ', flops / 1e9))
-    print('{:<30}  {:<8} KB'.format('Number of parameters: ', params / 1e3))
+    net.eval()
+    export_model(net, '/home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/xfeat')
+    # image = torch.randn(1, 3, 512, 512)
+    # flops, params = profile(net, inputs=(image,))
+    # print('{:<30}  {:<8} GFLops'.format('Computational complexity: ', flops / 1e9))
+    # print('{:<30}  {:<8} KB'.format('Number of parameters: ', params / 1e3))
+

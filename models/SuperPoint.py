@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from utils.export import export_model
 
 
 class SuperPointNet(torch.nn.Module):
@@ -118,21 +119,10 @@ if __name__ == '__main__':
     net = SuperPointNet()
     net.load_state_dict(torch.load('../weights/superpoint_v1.pth', map_location='cpu'))
     net.eval()
-
+    # export_model(net, '/home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/sp')
     image = torch.tensor(np.random.random((1, 1, 512, 512)), dtype=torch.float32)
     flops, params = profile(net, inputs=(image,))
     print('{:<30}  {:<8} GFLops'.format('Computational complexity: ', flops / 1e9))
     print('{:<30}  {:<8} KB'.format('Number of parameters: ', params / 1e3))
 
-    x = image.to('cuda')
-    model = net.to('cuda')
-    import time
-    for i in range(100):
-        scores, _ = model(x)
 
-    start = time.time()
-    for i in range(1000):
-        scores, _ = model(x)
-    end = time.time()
-
-    print('Inference time: ', (end - start) / 1000 * 1000, 'ms')

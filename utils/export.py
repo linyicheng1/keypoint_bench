@@ -4,8 +4,7 @@ import torch
 
 
 def export_model(model, name):
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda:0" if use_cuda else "cpu")
+    device = torch.device("cpu")
     model.to(device)
     dummy_input = torch.randn(1, 3, 512, 512, requires_grad=True).to(device)
     torch.onnx.export(model,

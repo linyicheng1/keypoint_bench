@@ -5,6 +5,7 @@ from utils.matcher import optical_flow_tensor, optical_flow_cv, brute_force_matc
 from utils.projection import warp
 from utils.visualization import plot_epipolar_lines, write_txt, plot_kps_error
 from utils.mvg import fundamental_estimate
+import numpy as np
 
 
 def fundamental_matrix_ransac(step: int,
@@ -16,6 +17,8 @@ def fundamental_matrix_ransac(step: int,
                               desc_map_1: torch.Tensor,
                               params: dict):
     show = None
+    show0 = None
+    show1 = None
     b, c, h, w = score_map_0.shape
     if params['matcher_params']['save_result']:
         show0 = image_0[0].detach().cpu().numpy().transpose(1, 2, 0) * 255
@@ -25,7 +28,23 @@ def fundamental_matrix_ransac(step: int,
         show = cv2.hconcat([show0, show1])
     # 1. extract key points
     kps0 = detection(score_map_0, params['extractor_params'])
+    # tmp = cv2.imread('/home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/score_map.jpg', cv2.IMREAD_GRAYSCALE)
+    # score_map_1 = torch.tensor(tmp).unsqueeze(0).unsqueeze(0).float().to(score_map_0.device) / 255.
     kps1 = detection(score_map_1, params['extractor_params'])
+    if params['extractor_params']['save_result']:
+        score_map_show_0 = score_map_0[0, 0].detach().cpu().numpy() * 255
+        score_map_show_1 = score_map_1[0, 0].detach().cpu().numpy() * 255
+        score_map_show_0 = cv2.cvtColor(score_map_show_0, cv2.COLOR_GRAY2BGR)
+        score_map_show_1 = cv2.cvtColor(score_map_show_1, cv2.COLOR_GRAY2BGR)
+        for i in range(kps0.shape[0]):
+            cv2.circle(score_map_show_0, (int(kps0[i, 0] * (w-1)), int(kps0[i, 1] * (h - 1))), 1, (0, 0, 255), -1)
+        for i in range(kps1.shape[0]):
+            cv2.circle(score_map_show_1, (int(kps1[i, 0] * (w-1)), int(kps1[i, 1] * (h - 1))), 1, (0, 0, 255), -1)
+        cv2.imwrite(params['FundamentalMatrixRansac']['output']+'kps0_'+str(step)+".png", show0)
+        cv2.imwrite(params['FundamentalMatrixRansac']['output']+'kps1_'+str(step)+".png", show1)
+        cv2.imwrite(params['FundamentalMatrixRansac']['output']+'score_map_0_'+str(step)+".png", score_map_show_0)
+        cv2.imwrite(params['FundamentalMatrixRansac']['output']+'score_map_1_'+str(step)+".png", score_map_show_1)
+
     total_size = (kps0.shape[0] + kps1.shape[0])
     # 2. match key points
     if params['matcher_params']['type'] == 'optical_flow':

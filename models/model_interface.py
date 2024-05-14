@@ -19,6 +19,7 @@ from models.SuperPoint import SuperPointNet
 from models.Harris import Harris
 from models.D2_Net import D2Net
 from models.XFeat import XFeatModel
+from models.disk import DISK
 
 # import tasks
 from tasks.VisualizeTrackingError import visualize_tracking_error, plot_tracking_error
@@ -53,6 +54,9 @@ class MInterface(pl.LightningModule):
         elif params['model_type'] == 'XFeat':
             self.model = XFeatModel()
             self.model.load_state_dict(torch.load(params['XFeat_params']['weight']))
+        elif params['model_type'] == 'DISK':
+            self.model = DISK()
+            self.model.load_state_dict(torch.load(params['DISK_params']['weight'])['extractor'])
         elif params['model_type'] == 'Harris':
             self.model = Harris(params['Harris_params'])
         else:

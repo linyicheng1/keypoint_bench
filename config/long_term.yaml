@@ -16,7 +16,7 @@ test:
                 gray: False
     model:
         params:
-            model_type: D2Net
+            model_type: DISK
             task_type: FundamentalMatrixRansac
             Alike_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/alike-t.pth
@@ -42,16 +42,19 @@ test:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/d2_tf.pth
             XFeat_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/xfeat.pt
+            DISK_params:
+                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/disk.pth
             Harris_params:
                 block_size: 5
                 ksize: 3
                 k: 0.04
             extractor_params:
-                nms_dist: 16
+                nms_dist: 8
                 min_score: 0.0
                 top_k: 500
                 threshold: 0
                 border_dist: 8
+                save_result: False
             matcher_params:
                 type: brute_force
                 save_result: True
