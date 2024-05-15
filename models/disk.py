@@ -308,8 +308,8 @@ class DISK(torch.nn.Module):
 
     def forward(self, x):
         feature_map = self.unet(x)
-        desc_map = feature_map[:, :self.desc_dim]
-        score_map = feature_map[:, self.desc_dim:]
+        desc_map = F.normalize(feature_map[:, :self.desc_dim], dim=1)
+        score_map = torch.sigmoid(feature_map[:, self.desc_dim:])
         return score_map, desc_map
 
 
@@ -318,8 +318,8 @@ if __name__ == '__main__':
     net = DISK()
     weight = torch.load('../weights/disk.pth')
     net.load_state_dict(weight['extractor'])
-    image = torch.randn(1, 3, 512, 512)
-    flops, params = profile(net, inputs=(image,))
-    print('{:<30}  {:<8} GFLops'.format('Computational complexity: ', flops / 1e9))
-    print('{:<30}  {:<8} KB'.format('Number of parameters: ', params / 1e3))
-    # export_model(net, '/home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/disk')
+    # image = torch.randn(1, 3, 512, 512)
+    # flops, params = profile(net, inputs=(image,))
+    # print('{:<30}  {:<8} GFLops'.format('Computational complexity: ', flops / 1e9))
+    # print('{:<30}  {:<8} KB'.format('Number of parameters: ', params / 1e3))
+    export_model(net, '/home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/disk')

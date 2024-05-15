@@ -49,12 +49,12 @@ test:
                 ksize: 3
                 k: 0.04
             extractor_params:
-                nms_dist: 8
+                nms_dist: 16
                 min_score: 0.0
                 top_k: 500
                 threshold: 0
                 border_dist: 8
-                save_result: False
+                save_result: True
             matcher_params:
                 type: brute_force
                 save_result: True
