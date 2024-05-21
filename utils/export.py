@@ -14,7 +14,7 @@ def export_model(model, name):
                       opset_version=11,
                       do_constant_folding=True,
                       input_names=['input'],
-                      output_names=['output'])
+                      output_names=['score', 'descriptor'])
     ov_model = ov.convert_model(name+".onnx", example_input=dummy_input)
     ov.save_model(ov_model, name+'.xml')
 

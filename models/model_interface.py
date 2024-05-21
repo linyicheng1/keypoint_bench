@@ -20,6 +20,8 @@ from models.Harris import Harris
 from models.D2_Net import D2Net
 from models.XFeat import XFeatModel
 from models.disk import DISK
+from models.r2d2 import *
+from models.sfd2 import ResSegNetV2
 
 # import tasks
 from tasks.VisualizeTrackingError import visualize_tracking_error, plot_tracking_error
@@ -54,6 +56,14 @@ class MInterface(pl.LightningModule):
         elif params['model_type'] == 'XFeat':
             self.model = XFeatModel()
             self.model.load_state_dict(torch.load(params['XFeat_params']['weight']))
+        elif params['model_type'] == 'r2d2':
+            checkpoint = torch.load(params['r2d2_params']['weight'])
+            self.model = eval(checkpoint['net'])
+            weights = checkpoint['state_dict']
+            self.model.load_state_dict({k.replace('module.', ''): v for k, v in weights.items()})
+        elif params['model_type'] == 'sfd2':
+            self.model = ResSegNetV2(outdim=128, require_stability=True).eval()
+            self.model.load_state_dict(torch.load(params['sfd2_params']['weight'])['model'], strict=False)
         elif params['model_type'] == 'DISK':
             self.model = DISK()
             self.model.load_state_dict(torch.load(params['DISK_params']['weight'])['extractor'])

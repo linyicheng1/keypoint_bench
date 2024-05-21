@@ -16,7 +16,7 @@ test:
                 gray: False
     model:
         params:
-            model_type: DISK
+            model_type: sfd2
             task_type: FundamentalMatrixRansac
             Alike_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/alike-t.pth
@@ -42,6 +42,10 @@ test:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/d2_tf.pth
             XFeat_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/xfeat.pt
+            r2d2_params:
+                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/sync/weights/r2d2_WASF_N16.pt
+            sfd2_params:
+                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/sync/weights/sfd2.pth
             DISK_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/disk.pth
             Harris_params:
