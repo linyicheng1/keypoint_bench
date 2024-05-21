@@ -16,7 +16,7 @@ test:
                 gray: False
     model:
         params:
-            model_type: sfd2
+            model_type: SuperPoint
             task_type: FundamentalMatrixRansac
             Alike_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/alike-t.pth
@@ -60,16 +60,14 @@ test:
                 border_dist: 8
                 save_result: True
             matcher_params:
-                type: brute_force
+                type: light_glue
                 save_result: True
                 brute_force_params:
                     metric: euclidean
                     max_distance: 5
                     cross_check: True
                 light_glue_params:
-                    aliked_weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/sync/weights/aliked_lightglue.pth
-                    superpoint_weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/sync/weights/superpoint_lightglue.pth
-                    disk_weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/sync/weights/disk_lightglue.pth
+                    weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/sync/
 
             FundamentalMatrixRansac:
                 save_path: /home/server/linyicheng/py_proj/keypoint_bench/fund/good_e_0.png

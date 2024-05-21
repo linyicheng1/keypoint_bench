@@ -22,6 +22,8 @@ from models.XFeat import XFeatModel
 from models.disk import DISK
 from models.r2d2 import *
 from models.sfd2 import ResSegNetV2
+from models.lightglue import LightGlue
+
 
 # import tasks
 from tasks.VisualizeTrackingError import visualize_tracking_error, plot_tracking_error
@@ -34,7 +36,7 @@ class MInterface(pl.LightningModule):
     def __init__(self, params) -> None:
         super().__init__()
         self.params = params
-
+        self.matcher = None
         # model choice
         if params['model_type'] == 'Alike':
             self.model = ALNet(params['Alike_params'])
@@ -51,6 +53,8 @@ class MInterface(pl.LightningModule):
         elif params['model_type'] == 'SuperPoint':
             self.model = SuperPointNet()
             self.model.load_state_dict(torch.load(params['SuperPoint_params']['weight']))
+            if params['matcher_params']['type'] == 'light_glue':
+                self.matcher = LightGlue(features="superpoint", weight_path=params['matcher_params']['light_glue_params']['weight'])
         elif params['model_type'] == 'D2Net':
             self.model = D2Net(model_file=params['D2Net_params']['weight'])
         elif params['model_type'] == 'XFeat':
@@ -221,7 +225,8 @@ class MInterface(pl.LightningModule):
         elif self.params['task_type'] == 'FundamentalMatrixRansac':
             result = fundamental_matrix_ransac(batch_idx, batch['image0'], batch['image1'],
                                                score_map_0, score_map_1,
-                                               desc_map_0, desc_map_1, self.params)
+                                               desc_map_0, desc_map_1,
+                                               self.matcher, self.params)
             self.fundamental_radio.append(result['fundamental_radio'])
         elif self.params['task_type'] == 'visual_odometry':
             if self.params['matcher_params']['type'] == 'optical_flow' and \

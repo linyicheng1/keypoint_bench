@@ -21,6 +21,26 @@ else:
 torch.backends.cudnn.deterministic = True
 
 
+def sample_descriptors(keypoints, descriptors, s: int = 8):
+    """Interpolate descriptors at keypoint locations"""
+    b, c, h, w = descriptors.shape
+    keypoints = keypoints - s / 2 + 0.5
+    keypoints /= torch.tensor(
+        [(w * s - s / 2 - 0.5), (h * s - s / 2 - 0.5)],
+    ).to(
+        keypoints
+    )[None]
+    keypoints = keypoints * 2 - 1  # normalize to (-1, 1)
+    args = {"align_corners": True} if torch.__version__ >= "1.3" else {}
+    descriptors = torch.nn.functional.grid_sample(
+        descriptors, keypoints.view(b, 1, -1, 2), mode="bilinear", **args
+    )
+    descriptors = torch.nn.functional.normalize(
+        descriptors.reshape(b, c, -1), p=2, dim=1
+    )
+    return descriptors
+
+
 @torch.cuda.amp.custom_fwd(cast_inputs=torch.float32)
 def normalize_keypoints(
     kpts: torch.Tensor, size: Optional[torch.Tensor] = None
@@ -419,6 +439,38 @@ class LightGlue(nn.Module):
 
         # static lengths LightGlue is compiled for (only used with torch.compile)
         self.static_lengths = None
+
+    def match(self, pts0: torch.tensor, pts1: torch.tensor,
+              desc_map_0: torch.tensor, desc_map_1: torch.tensor, params=None):
+        h, w = params['h'], params['w']
+        kps_0 = [pts0[:, :2] * torch.tensor([w - 1, h - 1], device=pts0.device)]
+        kps_1 = [pts1[:, :2] * torch.tensor([w - 1, h - 1], device=pts0.device)]
+        scores_0 = [pts0[:, 2]]
+        scores_1 = [pts1[:, 2]]
+        descriptors_0 = [
+            sample_descriptors(k[None], d[None], 8)[0]
+            for k, d in zip(kps_0, desc_map_0)
+        ]
+        descriptors_1 = [
+            sample_descriptors(k[None], d[None], 8)[0]
+            for k, d in zip(kps_1, desc_map_1)
+        ]
+
+        feats0 = {
+            "keypoints": torch.stack(kps_0, 0),
+            "keypoint_scores": torch.stack(scores_0, 0),
+            "descriptors": torch.stack(descriptors_0, 0).transpose(-1, -2).contiguous(),
+        }
+        feats1 = {
+            "keypoints": torch.stack(kps_1, 0),
+            "keypoint_scores": torch.stack(scores_1, 0),
+            "descriptors": torch.stack(descriptors_1, 0).transpose(-1, -2).contiguous(),
+        }
+        m01 = self.forward({"image0": feats0, "image1": feats1})
+        m01 = m01['matches'][0]
+        pts0_matched = pts0[m01[:, 0]]
+        pts1_matched = pts1[m01[:, 1]]
+        return pts0_matched, pts1_matched
 
     def forward(self, data: dict) -> dict:
         """
@@ -842,26 +894,6 @@ if __name__ == '__main__':
         if resize is not None:
             image, _ = resize_image(image, resize, **kwargs)
         return numpy_image_to_torch(image)
-
-
-    def sample_descriptors(keypoints, descriptors, s: int = 8):
-        """Interpolate descriptors at keypoint locations"""
-        b, c, h, w = descriptors.shape
-        keypoints = keypoints - s / 2 + 0.5
-        keypoints /= torch.tensor(
-            [(w * s - s / 2 - 0.5), (h * s - s / 2 - 0.5)],
-        ).to(
-            keypoints
-        )[None]
-        keypoints = keypoints * 2 - 1  # normalize to (-1, 1)
-        args = {"align_corners": True} if torch.__version__ >= "1.3" else {}
-        descriptors = torch.nn.functional.grid_sample(
-            descriptors, keypoints.view(b, 1, -1, 2), mode="bilinear", **args
-        )
-        descriptors = torch.nn.functional.normalize(
-            descriptors.reshape(b, c, -1), p=2, dim=1
-        )
-        return descriptors
 
 
     def simple_nms(scores, nms_radius: int):

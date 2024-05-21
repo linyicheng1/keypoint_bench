@@ -6,6 +6,7 @@ from utils.projection import warp
 from utils.visualization import plot_epipolar_lines, write_txt, plot_kps_error
 from utils.mvg import fundamental_estimate
 import numpy as np
+from models.lightglue import LightGlue
 
 
 def fundamental_matrix_ransac(step: int,
@@ -15,6 +16,7 @@ def fundamental_matrix_ransac(step: int,
                               score_map_1: torch.Tensor,
                               desc_map_0: torch.Tensor,
                               desc_map_1: torch.Tensor,
+                              matcher: LightGlue,
                               params: dict):
     show = None
     show0 = None
@@ -54,6 +56,17 @@ def fundamental_matrix_ransac(step: int,
     elif params['matcher_params']['type'] == 'brute_force':
         kps0, kps1 = brute_force_matcher(kps0, kps1, desc_map_0, desc_map_1,
                                          params['matcher_params']['brute_force_params'])
+    elif params['matcher_params']['type'] == 'light_glue':
+        if matcher is None:
+            kps0, kps1 = brute_force_matcher(kps0, kps1, desc_map_0, desc_map_1,
+                                             params['matcher_params']['brute_force_params'])
+        else:
+            param = {
+                'w': w,
+                'h': h,
+            }
+            kps0, kps1 = matcher.match(kps0, kps1, desc_map_0,
+                                       desc_map_1, param)
     if params['matcher_params']['save_result']:
         for i in range(kps0.shape[0]):
             cv2.line(show, (int(kps0[i, 0] * (w-1)), int(kps0[i, 1] * (h - 1))),
