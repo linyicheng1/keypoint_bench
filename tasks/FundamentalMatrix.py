@@ -93,6 +93,7 @@ def fundamental_matrix(step: int,
                        score_map_1: torch.Tensor,
                        desc_map_0: torch.Tensor,
                        desc_map_1: torch.Tensor,
+                       matcher: LightGlue,
                        params: dict):
     """
     :param step:
@@ -102,6 +103,7 @@ def fundamental_matrix(step: int,
     :param score_map_1:
     :param desc_map_0:
     :param desc_map_1:
+    :param matcher:
     :param params:
     :return:
     """
@@ -109,7 +111,7 @@ def fundamental_matrix(step: int,
     # 1. extract key points
     kps0 = detection(score_map_0, params['extractor_params'])
     kps1 = detection(score_map_1, params['extractor_params'])
-
+    b, c, h, w = score_map_0.shape
     # 2. match key points
     if params['matcher_params']['type'] == 'optical_flow':
         kps1 = optical_flow_tensor(kps0[:, 0:2], kps0[:, 0:2], desc_map_0,
@@ -118,7 +120,19 @@ def fundamental_matrix(step: int,
     elif params['matcher_params']['type'] == 'brute_force':
         kps0, kps1 = brute_force_matcher(kps0, kps1, desc_map_0, desc_map_1,
                                          params['matcher_params']['brute_force_params'])
-
+    elif params['matcher_params']['type'] == 'light_glue':
+        if matcher is None:
+            kps0, kps1 = brute_force_matcher(kps0, kps1, desc_map_0, desc_map_1,
+                                             params['matcher_params']['brute_force_params'])
+        else:
+            param = {
+                'w': w,
+                'h': h,
+            }
+            kps0, kps1 = matcher.match(kps0, kps1, desc_map_0,
+                                       desc_map_1, param)
+            kps1 = kps1[:, :-1] * torch.tensor([w - 1, h - 1], dtype=torch.float32).to(score_map_0.device)
+            kps1 = torch.cat([kps1, torch.ones(kps1.shape[0], 1).to(kps1.device)], dim=1)
     # 3. calculate error
     kps0_wh = kps0[:, :-1] * torch.tensor([score_map_0.shape[3] - 1, score_map_0.shape[2] - 1], dtype=torch.float32).to(score_map_0.device)
     kps0_wh = torch.cat([kps0_wh, torch.ones(kps0_wh.shape[0], 1).to(kps0_wh.device)], dim=1)

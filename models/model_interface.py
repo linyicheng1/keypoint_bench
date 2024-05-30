@@ -71,6 +71,8 @@ class MInterface(pl.LightningModule):
         elif params['model_type'] == 'DISK':
             self.model = DISK()
             self.model.load_state_dict(torch.load(params['DISK_params']['weight'])['extractor'])
+            if params['matcher_params']['type'] == 'light_glue':
+                self.matcher = LightGlue(features="disk", weight_path=params['matcher_params']['light_glue_params']['weight'])
         elif params['model_type'] == 'Harris':
             self.model = Harris(params['Harris_params'])
         else:
@@ -136,7 +138,7 @@ class MInterface(pl.LightningModule):
             num = np.mean(num)
 
             print('fundamental_error', error, ' fundamental_radio', radio, ' fundamental_num', num)
-        elif self.params['task_type'] == 'visual_odometry':
+        elif self.params['task_type'] == 'visual_odometer':
             self.r_est = torch.as_tensor(self.r_est).cpu().numpy()
             self.t_est = torch.as_tensor(self.t_est).cpu().numpy()
             np.save(self.params['visual_odometer_params']['save_path'].replace('.png', '_r_est.npy'), self.r_est)
@@ -212,12 +214,12 @@ class MInterface(pl.LightningModule):
                 # self.params['model_type'] != 'LETNet' and self.params['model_type'] != 'GoodPoint':
                 result = fundamental_matrix(batch_idx, last_img, batch,
                                             score_map_0, score_map_1,
-                                            last_img, batch['image0'], self.params)
+                                            last_img, batch['image0'], self.matcher, self.params)
                 # print(result['fundamental_error'], result['fundamental_radio'])
             else:
                 result = fundamental_matrix(batch_idx, last_img, batch,
                                             score_map_0, score_map_1,
-                                            desc_map_0, desc_map_1, self.params)
+                                            desc_map_0, desc_map_1, self.matcher, self.params)
                 # print(result['fundamental_error'], result['fundamental_radio'])
             self.fundamental_error.append(result['fundamental_error'])
             self.fundamental_radio.append(result['fundamental_radio'])
@@ -228,18 +230,20 @@ class MInterface(pl.LightningModule):
                                                desc_map_0, desc_map_1,
                                                self.matcher, self.params)
             self.fundamental_radio.append(result['fundamental_radio'])
-        elif self.params['task_type'] == 'visual_odometry':
+        elif self.params['task_type'] == 'visual_odometer':
             if self.params['matcher_params']['type'] == 'optical_flow' and \
-                    (self.params['model_type'] != 'LETNet' or self.params['model_type'] != 'GoodPoint'):
+                    (self.params['model_type'] != 'LETNet' and self.params['model_type'] != 'GoodPoint'):
                 result = visual_odometry(batch_idx, self.r_est[-1], self.t_est[-1],
                                          last_img, batch,
                                          score_map_0, score_map_1,
-                                         last_img, batch['image0'], self.params)
+                                         last_img, batch['image0'],
+                                         self.matcher, self.params)
             else:
                 result = visual_odometry(batch_idx, self.r_est[-1], self.t_est[-1],
                                          last_img, batch,
                                          score_map_0, score_map_1,
-                                         desc_map_0, desc_map_1, self.params)
+                                         desc_map_0, desc_map_1,
+                                         self.matcher, self.params)
             self.r_est.append(result['R'])
             self.t_est.append(result['t'])
         return result

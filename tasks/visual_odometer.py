@@ -2,8 +2,9 @@ import cv2
 import numpy as np
 import torch
 from utils.extracter import detection
-from utils.matcher import optical_flow_tensor, optical_flow_cv
+from utils.matcher import optical_flow_tensor, optical_flow_cv, brute_force_matcher
 from utils.visualization import plot_matches, write_position, plot_kps_error
+from models.lightglue import LightGlue
 
 
 def visual_odometry(step: int,
@@ -15,6 +16,7 @@ def visual_odometry(step: int,
                     score_map_1: torch.Tensor,
                     desc_map_0: torch.Tensor,
                     desc_map_1: torch.Tensor,
+                    matcher: LightGlue,
                     params: dict,
                     ):
     """
@@ -27,6 +29,7 @@ def visual_odometry(step: int,
     :param score_map_1:
     :param desc_map_0:
     :param desc_map_1:
+    :matcher LightGlue:
     :param params:
     :return:
     """
@@ -34,7 +37,7 @@ def visual_odometry(step: int,
     # 1. extract key points
     kps0 = detection(score_map_0, params['extractor_params'])
     kps1 = detection(score_map_1, params['extractor_params'])
-
+    b, c, h, w = score_map_0.shape
     # 2. match key points
 
     if params['matcher_params']['type'] == 'optical_flow':
@@ -42,9 +45,21 @@ def visual_odometry(step: int,
                                           desc_map_1, params['matcher_params']['optical_flow_params'])
         kps1 = kps1[np.where(status == 1)[0], :]
         kps0 = kps0[np.where(status == 1)[0], :]
-    elif params['matcher_params']['type'] == 'bf_matcher':
-        pass  # TODO
-
+    elif params['matcher_params']['type'] == 'brute_force':
+        kps0, kps1 = brute_force_matcher(kps0, kps1, desc_map_0, desc_map_1,
+                                         params['matcher_params']['brute_force_params'])
+    elif params['matcher_params']['type'] == 'light_glue':
+        if matcher is None:
+            kps0, kps1 = brute_force_matcher(kps0, kps1, desc_map_0, desc_map_1,
+                                             params['matcher_params']['brute_force_params'])
+        else:
+            param = {
+                'w': w,
+                'h': h,
+            }
+            kps0, kps1 = matcher.match(kps0, kps1, desc_map_0,
+                                       desc_map_1, param)
+            kps1 = kps1[:, 0:2]
     # 2.5. plot matches
     pts0 = kps0.cpu().numpy()
     kps1 = kps1.cpu().numpy()

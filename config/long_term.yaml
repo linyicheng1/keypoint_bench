@@ -16,7 +16,7 @@ test:
                 gray: False
     model:
         params:
-            model_type: SuperPoint
+            model_type: DISK
             task_type: FundamentalMatrixRansac
             Alike_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/alike-t.pth

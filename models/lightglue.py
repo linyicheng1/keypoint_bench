@@ -394,6 +394,10 @@ class LightGlue(nn.Module):
                 )
             for k, v in self.features[features].items():
                 setattr(conf, k, v)
+        if features == 'superpoint':
+            self.desc_scale = 8
+        elif features == 'disk':
+            self.desc_scale = 1
 
         if conf.input_dim != conf.descriptor_dim:
             self.input_proj = nn.Linear(conf.input_dim, conf.descriptor_dim, bias=True)
@@ -448,11 +452,11 @@ class LightGlue(nn.Module):
         scores_0 = [pts0[:, 2]]
         scores_1 = [pts1[:, 2]]
         descriptors_0 = [
-            sample_descriptors(k[None], d[None], 8)[0]
+            sample_descriptors(k[None], d[None], self.desc_scale)[0]
             for k, d in zip(kps_0, desc_map_0)
         ]
         descriptors_1 = [
-            sample_descriptors(k[None], d[None], 8)[0]
+            sample_descriptors(k[None], d[None], self.desc_scale)[0]
             for k, d in zip(kps_1, desc_map_1)
         ]
 
@@ -683,6 +687,7 @@ class LightGlue(nn.Module):
 
 if __name__ == '__main__':
     from SuperPoint import SuperPointNet
+    from disk import DISK
     from typing import Union
     import cv2
     import matplotlib
@@ -921,11 +926,11 @@ if __name__ == '__main__':
         scores, indices = torch.topk(scores, k, dim=0, sorted=True)
         return keypoints[indices], scores
 
-    def extract(net, image):
+    def extract(net, image, s):
         # params
-        detection_threshold = 0.0005
+        detection_threshold = 0.0000
         pad = 4
-        nms_radius = 4
+        nms_radius = 5
         max_num_kps = 1000
 
         scores, descriptors = net(image)
@@ -964,7 +969,7 @@ if __name__ == '__main__':
         kps = [torch.flip(k, [1]).float() for k in kps]
 
         descriptors = [
-            sample_descriptors(k[None], d[None], 8)[0]
+            sample_descriptors(k[None], d[None], s)[0]
             for k, d in zip(kps, descriptors)
         ]
         return {
@@ -973,19 +978,57 @@ if __name__ == '__main__':
             "descriptors": torch.stack(descriptors, 0).transpose(-1, -2).contiguous(),
         }
 
+    def extract_disk(img):
+        # params
+        detection_threshold = 0.0005
+        nms_radius = 11
+        max_num_kps = 1000
+        import kornia
+        model = kornia.feature.DISK.from_pretrained("depth").to(img.device)
+
+        features = model(
+            img,
+            n=max_num_kps,
+            window_size=nms_radius,
+            score_threshold=detection_threshold,
+            pad_if_not_divisible=True,
+        )
+
+        keypoints = [f.keypoints for f in features]
+        scores = [f.detection_scores for f in features]
+        descriptors = [f.descriptors for f in features]
+        del features
+
+        keypoints = torch.stack(keypoints, 0)
+        scores = torch.stack(scores, 0)
+        descriptors = torch.stack(descriptors, 0)
+
+        return {
+            "keypoints": keypoints.to(img).contiguous(),
+            "keypoint_scores": scores.to(img).contiguous(),
+            "descriptors": descriptors.to(img).contiguous(),
+        }
+
+
     # demo
     image0 = load_image(Path('/media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/long_term_image/01.jpg'))
     image1 = load_image(Path('/media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/long_term_image/02.jpg'))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    matcher = LightGlue(features="superpoint", weight_path='..').eval().to(device)
-    net = SuperPointNet()
-    net.load_state_dict(torch.load('../weights/superpoint_v1.pth'))
+    matcher = LightGlue(features="disk", weight_path='..').eval().to(device)
+    net = DISK()
+    net.load_state_dict(torch.load('../weights/disk.pth')['extractor'])
+    # matcher = LightGlue(features="superpoint", weight_path='..').eval().to(device)
+    # net = SuperPointNet()
+    # net.load_state_dict(torch.load('../weights/superpoint_v1.pth'))
     net.to(device)
     net.eval()
 
-    feats0 = extract(net, image0.to(device).unsqueeze(0))
-    feats1 = extract(net, image1.to(device).unsqueeze(0))
+    feats0 = extract(net, image0.to(device).unsqueeze(0), 1)
+    feats1 = extract(net, image1.to(device).unsqueeze(0), 1)
+
+    feats00 = extract_disk(image0.to(device).unsqueeze(0))
+    feats11 = extract_disk(image1.to(device).unsqueeze(0))
 
     matches01 = matcher({"image0": feats0, "image1": feats1})
 
