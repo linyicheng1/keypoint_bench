@@ -39,9 +39,9 @@ def fundamental_matrix_ransac(step: int,
         score_map_show_0 = cv2.cvtColor(score_map_show_0, cv2.COLOR_GRAY2BGR)
         score_map_show_1 = cv2.cvtColor(score_map_show_1, cv2.COLOR_GRAY2BGR)
         for i in range(kps0.shape[0]):
-            cv2.circle(score_map_show_0, (int(kps0[i, 0] * (w-1)), int(kps0[i, 1] * (h - 1))), 1, (0, 0, 255), -1)
+            cv2.circle(show0, (int(kps0[i, 0] * (w-1)), int(kps0[i, 1] * (h - 1))), 1, (0, 0, 255), -1)
         for i in range(kps1.shape[0]):
-            cv2.circle(score_map_show_1, (int(kps1[i, 0] * (w-1)), int(kps1[i, 1] * (h - 1))), 1, (0, 0, 255), -1)
+            cv2.circle(show1, (int(kps1[i, 0] * (w-1)), int(kps1[i, 1] * (h - 1))), 1, (0, 0, 255), -1)
         cv2.imwrite(params['FundamentalMatrixRansac']['output']+'kps0_'+str(step)+".png", show0)
         cv2.imwrite(params['FundamentalMatrixRansac']['output']+'kps1_'+str(step)+".png", show1)
         cv2.imwrite(params['FundamentalMatrixRansac']['output']+'score_map_0_'+str(step)+".png", score_map_show_0)

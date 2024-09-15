@@ -216,6 +216,8 @@ def detection(score_map: torch.Tensor,
     pts = prob_map_to_positions_with_prob(fast_nms_score_map, threshold=threshold)
     if pts.shape[0] > max_pts:
         pts = pts[torch.argsort(pts[:, 2], descending=True)[:max_pts]]
+    if min_score > 0:
+        pts = pts[pts[:, 2] > min_score]
     return pts
 
 
