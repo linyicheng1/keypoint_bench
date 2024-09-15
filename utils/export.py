@@ -6,7 +6,7 @@ import tensorrt as trt
 def export_model(model, name):
     device = torch.device("cpu")
     model.to(device)
-    dummy_input = torch.randn(1, 3, 400, 800, requires_grad=True).to(device)
+    dummy_input = torch.randn(1, 3, 512, 512, requires_grad=True).to(device)
     torch.onnx.export(model,
                       dummy_input,
                       name+".onnx",

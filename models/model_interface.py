@@ -12,6 +12,7 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 import utils
 # import models
 from models.ALike import ALNet
+from models.EdgePoint import EdgePoint
 from models.GoodPoint import GoodPoint
 from models.KeyNet import KeyNet
 from models.LETNet import LETNet
@@ -30,7 +31,7 @@ from tasks.VisualizeTrackingError import visualize_tracking_error, plot_tracking
 from tasks.repeatability import repeatability, plot_repeatability
 from tasks.FundamentalMatrix import fundamental_matrix, plot_fundamental_matrix, fundamental_matrix_ransac
 from tasks.visual_odometer import visual_odometry, plot_visual_odometry
-
+from tasks.MHA import mha
 
 class MInterface(pl.LightningModule):
     def __init__(self, params) -> None:
@@ -41,6 +42,9 @@ class MInterface(pl.LightningModule):
         if params['model_type'] == 'Alike':
             self.model = ALNet(params['Alike_params'])
             self.model.load_state_dict(torch.load(params['Alike_params']['weight']))
+        elif params['model_type'] == 'EdgePoint':
+            self.model = EdgePoint(params['EdgePoint_params'])
+            self.model.load_state_dict(torch.load(params['EdgePoint_params']['weight']))
         elif params['model_type'] == 'GoodPoint':
             self.model = GoodPoint(params['GoodPoint_params'])
             self.model.load_state_dict(torch.load(params['GoodPoint_params']['weight']))
@@ -90,10 +94,12 @@ class MInterface(pl.LightningModule):
         self.fundamental_num = None
         self.r_est = None
         self.t_est = None
+        self.MHA = None
 
     def on_test_start(self) -> None:
         self.num_feat = []
         self.repeatability = []
+        self.MHA = []
         self.rep_mean_err = []
         self.accuracy = []
         self.matching_score = []
@@ -119,6 +125,10 @@ class MInterface(pl.LightningModule):
             plot_repeatability(error, self.params['repeatability_params']['save_path'].replace('.png', '_error.png'))
             error = np.mean(error)
             print('repeatability', rep, ' rep_mean_err', error)
+        elif self.params['task_type'] == 'MHA':
+            result = np.array(self.MHA)
+            for i in range(result.shape[1]):
+                print('MHA ', np.mean(result[:, i]))
         elif self.params['task_type'] == 'VisualizeTrackingError':
             error = torch.as_tensor(self.track_error).cpu().numpy()
             plot_tracking_error(error, self.params['VisualizeTrackingError_params']['save_path'])
@@ -208,6 +218,11 @@ class MInterface(pl.LightningModule):
             self.num_feat.append(result['num_feat'])
             self.repeatability.append(result['repeatability'])
             self.rep_mean_err.append(result['mean_error'])
+        elif self.params['task_type'] == 'MHA':
+            result = mha(batch_idx, batch['image0'], score_map_0, desc_map_0,
+                         batch['image1'], score_map_1, desc_map_1,
+                         warp01_params, warp10_params, self.params)
+            self.MHA.append(result)
         elif self.params['task_type'] == 'FundamentalMatrix':
             if self.params['matcher_params']['type'] == 'optical_flow' and \
                     (self.params['model_type'] != 'LETNet' and self.params['model_type'] != 'GoodPoint'):

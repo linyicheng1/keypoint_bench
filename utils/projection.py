@@ -162,8 +162,8 @@ def warp_homography(kpts0, params):
     # kpts0_valid: valid keypoints0, the invalid and inconsistance keypoints are removed
     # kpts01_valid: the warped valid keypoints0
     # ids: the valid indices
-    kpts0_valid = kpts0_valid / torch.tensor([w, h]).to(kpts0.device)
-    kpts01_valid = kpts01_valid / torch.tensor([w, h]).to(kpts0.device)
+    kpts0_valid = kpts0_valid / torch.tensor([w-1, h-1]).to(kpts0.device)
+    kpts01_valid = kpts01_valid / torch.tensor([w-1, h-1]).to(kpts0.device)
     return kpts0_valid, kpts01_valid, ids, ids_out
 
 
