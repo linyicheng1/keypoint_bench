@@ -64,9 +64,9 @@ def visual_odometry(step: int,
     pts0 = kps0.cpu().numpy()
     kps1 = kps1.cpu().numpy()
 
-    kps0_wh = (kps0[:, :-1] * torch.tensor([score_map_0.shape[3] - 1, score_map_0.shape[2] - 1],
+    kps0_wh = (kps0[:, 0:2] * torch.tensor([score_map_0.shape[3] - 1, score_map_0.shape[2] - 1],
                                            dtype=torch.float32).to(score_map_0.device)).cpu().numpy()
-    kps1_wh = kps1 * np.array([last_img.shape[3] - 1, last_img.shape[2] - 1], dtype=np.float32)
+    kps1_wh = kps1[:, 0:2] * np.array([last_img.shape[3] - 1, last_img.shape[2] - 1], dtype=np.float32)
     show = plot_matches(last_img, batch['image0'], kps0_wh, kps1_wh)
     root = params['visual_odometer_params']['output']
     cv2.imwrite(root + str(step) + '_matches.png', show)

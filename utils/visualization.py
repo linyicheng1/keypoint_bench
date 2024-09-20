@@ -156,26 +156,39 @@ def plot_matches(image0: torch.tensor,
     if len(image1.shape) == 2 or image1.shape[2] == 1:
         image1 = cv2.cvtColor(image1, cv2.COLOR_GRAY2RGB)
 
-    H, W, _ = image0.shape
-    show = np.zeros((H * 2, W, 3), dtype=np.uint8)
-    show[0:H, :, :] = image0
-    show[H:2*H, :, :] = image1
+    image0 = cv2.cvtColor(image0, cv2.COLOR_RGB2BGR)
+    image1 = cv2.cvtColor(image1, cv2.COLOR_RGB2BGR)
+
+    if image0.shape == image1.shape:
+        H, W, _ = image0.shape
+        show = np.zeros((H * 2, W, 3), dtype=np.uint8)
+        show[0:H, :, :] = image0
+        show[H:2*H, :, :] = image1
+    else:
+        H, W, _ = image0.shape
+        H1, W1, _ = image1.shape
+        H2 = H + H1
+        W2 = max(W, W1)
+        show = np.zeros((H2, W2, 3), dtype=np.uint8)
+        show[0:H, 0:W, :] = image0
+        show[H:H2, 0:W1, :] = image1
+
     # draw pts on image
     for i in range(kps0.shape[0]):
         x0, y0 = kps0[i]
-        color = (0, 255, 0)
+        color = (0, 0, 255)
         cv2.drawMarker(show, (int(x0), int(y0)), color, cv2.MARKER_CROSS, 5)
 
     for i in range(kps1.shape[0]):
         x0, y0 = kps1[i]
-        color = (255, 0, 0)
+        color = (0, 0, 255)
         cv2.drawMarker(show, (int(x0), int(y0) + H), color, cv2.MARKER_CROSS, 5)
     # draw lines
     for i in range(kps0.shape[0]):
         x0, y0 = kps0[i]
         x1, y1 = kps1[i]
-        color = (0, 0, 255)
-        cv2.line(show, (int(x0), int(y0)), (int(x1), int(y1) + H), color, 1)
+        color = (0, 255, 0)
+        cv2.line(show, (int(x0), int(y0)), (int(x1), int(y1) + H), color, 2)
     return show
 
 

@@ -3,9 +3,69 @@ import numpy as np
 import cv2
 from utils.projection import warp
 from utils.extracter import detection
-from utils.visualization import plot_kps_error, write_txt
+from utils.visualization import plot_kps_error, write_txt, plot_matches
 from utils.matcher import optical_flow_tensor, optical_flow_cv, brute_force_matcher
 
+
+def estimate_pose(kpts0, kpts1, K0, K1, thresh, conf=0.99999):
+    if len(kpts0) < 5:
+        return None
+
+    f_mean = np.mean([K0[0, 0], K1[1, 1], K0[0, 0], K1[1, 1]])
+    norm_thresh = thresh / f_mean
+
+    kpts0 = (kpts0 - K0[[0, 1], [2, 2]][None]) / K0[[0, 1], [0, 1]][None]
+    kpts1 = (kpts1 - K1[[0, 1], [2, 2]][None]) / K1[[0, 1], [0, 1]][None]
+
+    E, mask = cv2.findEssentialMat(
+        kpts0, kpts1, np.eye(3), threshold=norm_thresh, prob=conf,
+        method=cv2.RANSAC)
+
+    assert E is not None
+
+    best_num_inliers = 0
+    ret = None
+    for _E in np.split(E, len(E) / 3):
+        n, R, t, mask_new = cv2.recoverPose(
+            _E, kpts0, kpts1, np.eye(3), 1e9, mask=mask)
+        if n > best_num_inliers:
+            best_num_inliers = n
+            ret = (R, t[:, 0], mask.ravel() > 0)
+    return ret
+
+def angle_error_mat(R1, R2):
+    cos = (np.trace(np.dot(R1.T, R2)) - 1) / 2
+    cos = np.clip(cos, -1., 1.)  # numercial errors can make it out of bounds
+    return np.rad2deg(np.abs(np.arccos(cos)))
+
+
+def angle_error_vec(v1, v2):
+    n = np.linalg.norm(v1) * np.linalg.norm(v2)
+    return np.rad2deg(np.arccos(np.clip(np.dot(v1, v2) / n, -1.0, 1.0)))
+
+
+def compute_pose_error(T_0to1, R, t):
+    R_gt = T_0to1[:3, :3]
+    t_gt = T_0to1[:3, 3]
+    error_t = angle_error_vec(t, t_gt)
+    error_t = np.minimum(error_t, 180 - error_t)  # ambiguity of E estimation
+    error_R = angle_error_mat(R, R_gt)
+    return error_t, error_R
+
+
+def pose_auc(errors, thresholds):
+    sort_idx = np.argsort(errors)
+    errors = np.array(errors.copy())[sort_idx]
+    recall = (np.arange(len(errors)) + 1) / len(errors)
+    errors = np.r_[0., errors]
+    recall = np.r_[0., recall]
+    aucs = []
+    for t in thresholds:
+        last_index = np.searchsorted(errors, t)
+        r = np.r_[recall[:last_index], recall[last_index-1]]
+        e = np.r_[errors[:last_index], t]
+        aucs.append(np.trapz(r, x=e)/t)
+    return aucs
 
 
 def auc(idx, img_0, score_map_0, desc_map_0, img_1, score_map_1, desc_map_1, warp01, warp10, params):
@@ -22,51 +82,43 @@ def auc(idx, img_0, score_map_0, desc_map_0, img_1, score_map_1, desc_map_1, war
     Returns:
         dict
     """
-    th = params['MHA_params']['th']
-    mha_result = []
-    for i in th:
-        mha_result.append(0)
     # 1. detection
     kps0 = detection(score_map_0, params['extractor_params'])
     kps1 = detection(score_map_1, params['extractor_params'])
-    # validation
-    kps0_cov, kps01_cov, _, _ = warp(kps0, warp01)
-    kps1_cov, kps10_cov, _, _ = warp(kps1, warp10)
-    if kps0_cov.shape[0] == 0 or kps1_cov.shape[0] == 0:
-        return mha_result
     # 2. matching
-    m_pts0, m_pts1 = brute_force_matcher(kps0_cov, kps1_cov, desc_map_0, desc_map_1,
+    m_pts0, m_pts1 = brute_force_matcher(kps0, kps1, desc_map_0, desc_map_1,
                                          params['matcher_params']['brute_force_params'])
-    h, w = warp01['height'].cpu().numpy(), warp01['width'].cpu().numpy()
-    m_pts0_wh = m_pts0[:, 0:2] * torch.tensor([w - 1, h - 1], dtype=torch.float32, device=img_0.device)
-    m_pts1_wh = m_pts1[:, 0:2] * torch.tensor([w - 1, h - 1], dtype=torch.float32, device=img_1.device)
+
+    h0, w0 = score_map_0.shape[2], score_map_0.shape[3]
+    h1, w1 = score_map_1.shape[2], score_map_1.shape[3]
+
+    m_pts0_wh = m_pts0[:, 0:2] * torch.tensor([w0 - 1, h0 - 1], dtype=torch.float32, device=img_0.device)
+    m_pts1_wh = m_pts1[:, 0:2] * torch.tensor([w1 - 1, h1 - 1], dtype=torch.float32, device=img_1.device)
     m_pts0_wh = m_pts0_wh.cpu().numpy()
     m_pts1_wh = m_pts1_wh.cpu().numpy()
-    H, inliers = cv2.findHomography(m_pts0_wh,
-                                    m_pts1_wh,
-                                    cv2.RANSAC)
-    if H is None:
-        return mha_result
 
-    real_H = warp01['homography_matrix'].cpu().numpy()
-    corners = np.array([[0, 0, 1],
-                        [h - 1, 0, 1],
-                        [0, w - 1, 1],
-                        [h - 1, w - 1, 1]])
-    real_warped_corners = np.dot(corners, np.transpose(real_H))
-    real_warped_corners = real_warped_corners[:, :2] / real_warped_corners[:, 2:]
-    warped_corners = np.dot(corners, np.transpose(H))
-    warped_corners = warped_corners[:, :2] / warped_corners[:, 2:]
-    resize_h = img_0.shape[2]
-    resize_w = img_0.shape[3]
+    # 3. estimate pose
+    thresh = 1.
+    K0 = warp01['intrinsics0'].cpu().numpy()
+    K1 = warp01['intrinsics1'].cpu().numpy()
+    result = estimate_pose(m_pts0_wh, m_pts1_wh, K0, K1, thresh)
+    if result is None:
+        return {
+            'AUC': 180,
+            'inliers': 0
+        }
+    R, t, inliers = result
+    # 4. compute pose error
+    T_0to1 = warp01['pose01'].cpu().numpy()
+    err_t, err_R = compute_pose_error(T_0to1, R, t)
 
-    real_warped_corners = real_warped_corners * np.array([resize_h/h, resize_w/w])
-    warped_corners = warped_corners * np.array([resize_h/h, resize_w/w])
+    # 5. visualization
+    out_dir = params['AUC_params']['output']
+    show = plot_matches(img_0, img_1, m_pts0_wh[inliers], m_pts1_wh[inliers])
+    cv2.imwrite(out_dir + '/matches_{}.png'.format(idx), show)
 
-    mean_dist = np.mean(np.linalg.norm(real_warped_corners - warped_corners, axis=1))
-
-    mha_result = []
-    for i in th:
-        mha_result.append(float(mean_dist <= i))
-
-    return mha_result
+    # print('error_t: {:.2f}, error_R: {:.2f}'.format(err_t, err_R))
+    return {
+        'AUC': np.maximum(err_t, err_R),
+        'inliers': np.sum(inliers)
+    }

@@ -32,6 +32,7 @@ from tasks.repeatability import repeatability, plot_repeatability
 from tasks.FundamentalMatrix import fundamental_matrix, plot_fundamental_matrix, fundamental_matrix_ransac
 from tasks.visual_odometer import visual_odometry, plot_visual_odometry
 from tasks.MHA import mha
+from tasks.AUC import auc, pose_auc
 
 class MInterface(pl.LightningModule):
     def __init__(self, params) -> None:
@@ -95,11 +96,15 @@ class MInterface(pl.LightningModule):
         self.r_est = None
         self.t_est = None
         self.MHA = None
+        self.AUC = None
+        self.AUC_inliers = None
 
     def on_test_start(self) -> None:
         self.num_feat = []
         self.repeatability = []
         self.MHA = []
+        self.AUC = []
+        self.AUC_inliers = []
         self.rep_mean_err = []
         self.accuracy = []
         self.matching_score = []
@@ -129,6 +134,14 @@ class MInterface(pl.LightningModule):
             result = np.array(self.MHA)
             for i in range(result.shape[1]):
                 print('MHA ', np.mean(result[:, i]))
+        elif self.params['task_type'] == 'AUC':
+            result = np.array(self.AUC)
+            result = pose_auc(result, self.params['AUC_params']['th'])
+            for i in result:
+                print('AUC ', i)
+            inliers = np.array(self.AUC_inliers)
+            print('AUC inliers', np.mean(inliers))
+
         elif self.params['task_type'] == 'VisualizeTrackingError':
             error = torch.as_tensor(self.track_error).cpu().numpy()
             plot_tracking_error(error, self.params['VisualizeTrackingError_params']['save_path'])
@@ -175,8 +188,22 @@ class MInterface(pl.LightningModule):
         if batch['dataset'][0] == 'HPatches' or \
            batch['dataset'][0] == 'megaDepth' or \
            batch['dataset'][0] == 'image_pair':
-            result0 = self.model(batch['image0'])
-            result1 = self.model(batch['image1'])
+            w, h = batch['image0'].shape[-2:]
+            if w % 32 != 0:
+                w = w - w % 32
+            if h % 32 != 0:
+                h = h - h % 32
+            img0 = batch['image0'][:, :, :w, :h]
+            w, h = batch['image1'].shape[-2:]
+            if w % 32 != 0:
+                w = w - w % 32
+            if h % 32 != 0:
+                h = h - h % 32
+
+            img1 = batch['image1'][:, :, :w, :h]
+            with torch.no_grad():
+                result0 = self.model(img0)
+                result1 = self.model(img1)
             score_map_0 = result0[0].detach()
             score_map_1 = result1[0].detach()
             if result0[1] is not None:
@@ -223,6 +250,13 @@ class MInterface(pl.LightningModule):
                          batch['image1'], score_map_1, desc_map_1,
                          warp01_params, warp10_params, self.params)
             self.MHA.append(result)
+        elif self.params['task_type'] == 'AUC':
+            result = auc(batch_idx, batch['image0'], score_map_0, desc_map_0,
+                         batch['image1'], score_map_1, desc_map_1,
+                         warp01_params, warp10_params, self.params)
+            self.AUC.append(result['AUC'])
+            self.AUC_inliers.append(result['inliers'])
+
         elif self.params['task_type'] == 'FundamentalMatrix':
             if self.params['matcher_params']['type'] == 'optical_flow' and \
                     (self.params['model_type'] != 'LETNet' and self.params['model_type'] != 'GoodPoint'):

@@ -12,7 +12,7 @@ test:
             hpatches_params:
                 type: hpatches
                 root: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/4cda377d-28db-4424-921c-6a1e0545ceeb/WangShuo/datasets/HPatch
-                alteration: i
+                alteration: v
                 image_size: 512
                 gray: False
             euroc_params:

@@ -21,8 +21,8 @@ test:
                 gray: False
             kitti_params:
                 type: kitti
-                root: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_gray/dataset/sequences/01/
-                gt: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_poses/dataset/poses/01.txt
+                root: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_gray/dataset/sequences/01/
+                gt: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_poses/dataset/poses/01.txt
                 gray: False
             megadepth_params:
                 root: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/disk-data/megadepth
@@ -42,10 +42,18 @@ test:
                 gray: False
     model:
         params:
-            model_type: DISK
+            model_type: EdgePoint
             task_type: visual_odometer
             Alike_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/alike-t.pth
+                c1: 8
+                c2: 16
+                c3: 32
+                c4: 64
+                dim: 64
+                single_head: True
+            EdgePoint_params:
+                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/EdgePoint.pt
                 c1: 8
                 c2: 16
                 c3: 32
@@ -79,11 +87,11 @@ test:
             extractor_params:
                 nms_dist: 4
                 min_score: 0.0
-                top_k: 500
+                top_k: 2000
                 threshold: 0
                 border_dist: 8
             matcher_params:
-                type: optical_flow
+                type: brute_force
                 optical_flow_params:
                     distance: 10
                     win_size: 21
@@ -92,6 +100,10 @@ test:
                     gray: False
                 light_glue_params:
                     weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/sync/
+                brute_force_params:
+                    metric: euclidean
+                    max_distance: 5
+                    cross_check: True
             VisualizeTrackingError_params:
                 save_path: /home/server/linyicheng/py_proj/keypoint_bench/track/good_f_i.png
                 output: /home/server/linyicheng/py_proj/keypoint_bench/output/

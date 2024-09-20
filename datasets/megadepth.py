@@ -350,6 +350,7 @@ class MegaDepthDataset(Dataset):
                                  'depth1': torch.from_numpy(depth1.astype(np.float32)),
                                  'intrinsics0': torch.from_numpy(intrinsics2.astype(np.float32)),
                                  'intrinsics1': torch.from_numpy(intrinsics1.astype(np.float32))},
+               'dataset': 'megaDepth'
                }
         if self.gray:
             ret['gray0'] = gray1

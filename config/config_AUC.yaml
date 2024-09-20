@@ -6,7 +6,7 @@ test:
         devices: [ 1 ]
     data:
         params:
-            data_type: hpatches
+            data_type: megadepth
             batch_size: 1
             num_workers: 1
             hpatches_params:
@@ -25,12 +25,13 @@ test:
                 gt: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_poses/dataset/poses/01.txt
                 gray: False
             megadepth_params:
-                root: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/disk-data/megadepth
+                type: megadepth
+                root: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/disk-data/imw2020-val
                 using_cache: True
                 pairs_per_scene: 100
                 image_size: 512
                 colorjit: True
-                gray: True
+                gray: False
                 crop_or_scale: 'scale'
             uma_params:
                 root: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/4cda377d-28db-4424-921c-6a1e0545ceeb/WangShuo/datasets/KITTI
@@ -42,7 +43,7 @@ test:
                 gray: False
     model:
         params:
-            model_type: SuperPoint
+            model_type: sfd2
             task_type: AUC
             Alike_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/alike-t.pth
@@ -71,6 +72,8 @@ test:
                 single_head: True
             DISK_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/disk.pth
+            sfd2_params:
+                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/sync/weights/sfd2.pth
             GoodPoint_params:
                 weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/goodpoint.pth
                 c0: 3
@@ -81,9 +84,9 @@ test:
                 ksize: 3
                 k: 0.04
             extractor_params:
-                nms_dist: 6
+                nms_dist: 4
                 min_score: 0.0
-                top_k: 1000
+                top_k: 2000
                 threshold: 0
                 border_dist: 8
             matcher_params:
@@ -109,6 +112,7 @@ test:
                 th: [3, 5, 7]
             AUC_params:
                 th: [ 5, 10, 20 ]
+                output: /home/server/linyicheng/py_proj/keypoint_bench/output/
             repeatability_params:
                 save_path: /home/server/linyicheng/py_proj/keypoint_bench/repet/alike_v.png
                 output: /home/server/linyicheng/py_proj/keypoint_bench/output/
