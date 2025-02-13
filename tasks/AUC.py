@@ -7,6 +7,36 @@ from utils.visualization import plot_kps_error, write_txt, plot_matches
 from utils.matcher import optical_flow_tensor, optical_flow_cv, brute_force_matcher
 
 
+class PID_controller(object):
+    def __init__(self, kp_threshold=3, kp_max_distance=10, kp_max_angle=30, kp_max_scale=0.2):
+        self.kp_threshold = kp_threshold
+        self.kp_max_distance = kp_max_distance
+        self.kp_max_angle = kp_max_angle
+        self.kp_max_scale = kp_max_scale
+    def get_kp_threshold(self):
+        return self.kp_threshold
+    def get_kp_max_distance(self):
+        return self.kp_max_distance
+    def get_kp_max_angle(self):
+        return self.kp_max_angle
+    def get_kp_max_scale(self):
+        return self.kp_max_scale
+    # 控制函数
+    def control(self, target, feedback):
+        # 计算 kp 误差
+        error = target - feedback
+        #  kp 数量控制
+        num_kp = len(target)
+        kp_error_norm = np.linalg.norm(error, axis=1)
+        kp_error_mask = kp_error_norm < self.kp_max_distance
+        kp_error_mask &= np.abs(error[:, 0]) < self.kp_max_angle
+        kp_error_mask &= np.abs(error[:, 1]) < self.kp_max_angle
+        kp_error_mask &= error[:, 2] < self.kp_max_scale
+        kp_error_mask &= error[:, 3] < self.kp_max_scale
+        kp_error_mask &= error[:, 4] < self.kp_max_scale
+        kp_error_mask &= error[:, 5] < self.kp_max_scale
+        
+
 def estimate_pose(kpts0, kpts1, K0, K1, thresh, conf=0.99999):
     if len(kpts0) < 5:
         return None
@@ -122,3 +152,4 @@ def auc(idx, img_0, score_map_0, desc_map_0, img_1, score_map_1, desc_map_1, war
         'AUC': np.maximum(err_t, err_R),
         'inliers': np.sum(inliers)
     }
+    # 6. compute AUC

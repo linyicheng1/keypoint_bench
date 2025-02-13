@@ -69,7 +69,7 @@ def visual_odometry(step: int,
     kps1_wh = kps1[:, 0:2] * np.array([last_img.shape[3] - 1, last_img.shape[2] - 1], dtype=np.float32)
     show = plot_matches(last_img, batch['image0'], kps0_wh, kps1_wh)
     root = params['visual_odometer_params']['output']
-    cv2.imwrite(root + str(step) + '_matches.png', show)
+    # cv2.imwrite(root + str(step) + '_matches.png', show)
     # 3. compute pose
     pp = (float(batch['cx']), float(batch['cy']))
     E, mask = cv2.findEssentialMat(kps0_wh, kps1_wh,
@@ -103,8 +103,11 @@ def plot_visual_odometry(r, t, save_path):
     x = t[:, 0, 0]
     y = t[:, 1, 0]
     ax1.plot3D(x, y, z)  # 绘制空间曲线
-    plt.show()
-
+    # plt.show()
+    # 保存绘制的图片fig
+    fig.savefig(save_path)
+    plt.close(fig)
+    
     write_position(save_path.replace('.png', '.txt'), r, t)
 
 
