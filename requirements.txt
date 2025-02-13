@@ -7,3 +7,9 @@ kornia~=0.7.1
 h5py~=3.10.0
 pillow~=10.2.0
 tqdm~=4.66.1
+pytorch_lightning
+openvino
+tensorrt
+scikit-image
+pypose
+

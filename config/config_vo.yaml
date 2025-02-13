@@ -11,21 +11,21 @@ test:
             num_workers: 1
             hpatches_params:
                 type: hpatches
-                root: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/WangShuo/datasets/HPatch
+                root: /home/data/WangShuo/datasets/HPatch
                 alteration: i
                 image_size: 512
                 gray: False
             euroc_params:
                 type: euroc
-                root: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/euroc/MH_01_easy/mav0/
+                root: /home/data/Dataset/euroc/MH_01_easy/mav0/
                 gray: False
             kitti_params:
                 type: kitti
-                root: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_gray/dataset/sequences/01/
-                gt: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/kitti_odom/data_odometry_poses/dataset/poses/01.txt
+                root: /home/data/Dataset/kitti_odom/data_odometry_gray/dataset/sequences/01/
+                gt: /home/data/Dataset/kitti_odom/data_odometry_poses/dataset/poses/01.txt
                 gray: False
             megadepth_params:
-                root: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/disk-data/megadepth
+                root: /home/data/Dataset/disk-data/megadepth
                 using_cache: True
                 pairs_per_scene: 100
                 image_size: 512
@@ -33,19 +33,19 @@ test:
                 gray: True
                 crop_or_scale: 'scale'
             uma_params:
-                root: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/WangShuo/datasets/KITTI
+                root: /home/data/Dataset/WangShuo/datasets/KITTI
                 gray: True
             tartanair_params:
                 type: tartanair
-                root: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/tartanair/mono/tartanair-test-mono-release/mono/ME000/
-                gt: /media/ddc_robot/4cda377d-28db-4424-921c-6a1e0545ceeb/Dataset/tartanair/tartanair_cvpr_gt/mono_gt/ME000.txt
+                root: /home/data/Dataset/Dataset/tartanair/mono/tartanair-test-mono-release/mono/ME000/
+                gt: /home/data/Dataset/Dataset/tartanair/tartanair_cvpr_gt/mono_gt/ME000.txt
                 gray: False
     model:
         params:
-            model_type: EdgePoint
+            model_type: Alike
             task_type: visual_odometer
             Alike_params:
-                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/alike-t.pth
+                weight: /home/code/keypoint_bench/weights/alike-t.pth
                 c1: 8
                 c2: 16
                 c3: 32
@@ -53,7 +53,7 @@ test:
                 dim: 64
                 single_head: True
             EdgePoint_params:
-                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/EdgePoint.pt
+                weight: /home/code/keypoint_bench/weights/EdgePoint.pt
                 c1: 8
                 c2: 16
                 c3: 32
@@ -61,22 +61,22 @@ test:
                 dim: 64
                 single_head: True
             KeyNet_params:
-                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/keynet_pytorch.pth
+                weight: /home/code/keypoint_bench/weights/keynet_pytorch.pth
                 num_filters: 8
                 num_levels: 3
                 kernel_size: 5
             SuperPoint_params:
-                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/superpoint_v1.pth
+                weight: /home/code/keypoint_bench/weights/superpoint_v1.pth
             XFeat_params:
-                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/xfeat.pt
+                weight: /home/code/keypoint_bench/weights/xfeat.pt
             r2d2_params:
-                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/sync/weights/r2d2_WASF_N16.pt
+                weight: /home/code/keypoint_bench/sync/weights/r2d2_WASF_N16.pt
             sfd2_params:
-                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/sync/weights/sfd2.pth
+                weight: /home/code/keypoint_bench/sync/weights/sfd2.pth
             DISK_params:
-                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/disk.pth
+                weight: /home/code/keypoint_bench/weights/disk.pth
             GoodPoint_params:
-                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/goodpoint.pth
+                weight: /home/code/keypoint_bench/weights/goodpoint.pth
                 c0: 3
                 c1: 8
                 h0: 4
