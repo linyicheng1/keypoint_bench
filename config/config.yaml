@@ -1,127 +1,87 @@
-# config.yaml
 test:
-    trainer:
-        max_epochs: 1
-        accelerator: gpu
-        devices: [ 1 ]
-    data:
-        params:
-            data_type: hpatches
-            batch_size: 1
-            num_workers: 1
-            hpatches_params:
-                type: hpatches
-                root: /home/data/WangShuo/datasets/HPatch
-                alteration: v
-                image_size: 512
-                gray: False
-            euroc_params:
-                type: euroc
-                root: /home/data/Dataset/euroc/MH_01_easy/mav0/
-                gray: False
-            kitti_params:
-                type: kitti
-                root: /home/data/Dataset/kitti_odom/data_odometry_gray/dataset/sequences/01/
-                gt: /home/data/kitti_odom/data_odometry_poses/dataset/poses/01.txt
-                gray: False
-            megadepth_params:
-                root: /home/data/disk-data/megadepth
-                using_cache: True
-                pairs_per_scene: 100
-                image_size: 512
-                colorjit: True
-                gray: True
-                crop_or_scale: 'scale'
-            uma_params:
-                root: /home/data/WangShuo/datasets/KITTI
-                gray: True
-            tartanair_params:
-                type: tartanair
-                root: /home/data/Dataset/tartanair/mono/tartanair-test-mono-release/mono/ME000/
-                gt: /home/data/Dataset/tartanair/tartanair_cvpr_gt/mono_gt/ME000.txt
-                gray: False
-    model:
-        params:
-            model_type: Alike
-            task_type: repeatability
-            Alike_params:
-                weight: /home/code/keypoint_bench/weights/alike-t.pth
-                c1: 8
-                c2: 16
-                c3: 32
-                c4: 64
-                dim: 64
-                single_head: True
-            KeyNet_params:
-                weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/keynet_pytorch.pth
-                num_filters: 8
-                num_levels: 3
-                kernel_size: 5
-            SuperPoint_params:
-                weight: /home/code/keypoint_bench/weights/superpoint_v1.pth
-            XFeat_params:
-                weight: /home/code/keypoint_bench/weights/xfeat.pt
-            EdgePoint_params:
-                weight: /home/code/keypoint_bench/weights/EdgePoint.pt
-                c1: 8
-                c2: 16
-                c3: 32
-                c4: 64
-                dim: 64
-                single_head: True
-            D2Net_params:
-                weight: /home/code/keypoint_bench/weights/d2_tf.pth
-            DISK_params:
-                weight: /home/code/keypoint_bench/weights/disk.pth
-            r2d2_params:
-                weight: /home/code/keypoint_bench/weights/r2d2_WASF_N16.pt
-            sfd2_params:
-                weight: /home/code/keypoint_bench/weights/sfd2.pth
-            LETNet_params:
-                weight: /home/code/keypoint_bench/weights/letnet.pth
-            GoodPoint_params:
-                weight: /home/code/keypoint_bench/weights/goodpoint.pth
-                c0: 3
-                c1: 8
-                h0: 4
-            Harris_params:
-                block_size: 5
-                ksize: 3
-                k: 0.04
-            extractor_params:
-                nms_dist: 6
-                min_score: 0.0
-                top_k: 500
-                threshold: 0
-                border_dist: 8
-            matcher_params:
-                type: optical_flow
-                optical_flow_params:
-                    distance: 10
-                    win_size: 21
-                    levels: 3
-                    interation: 40
-                    gray: False
-            VisualizeTrackingError_params:
-                save_path: /home/server/linyicheng/py_proj/keypoint_bench/track/good_f_i.png
-                output: /home/server/linyicheng/py_proj/keypoint_bench/output/
-                image:
-                    radius: 12
-                    max_error: 5
-                    color: 255,0,0
-            repeatability_params:
-                save_path: /home/output/alike_v.png
-                output: /home/output/
-                th: 3
-                image:
-                    radius: 6
-                    max_error: 3
-                    color: 255,0,0
-            FundamentalMatrix_params:
-                save_path: /home/server/linyicheng/py_proj/keypoint_bench/fund/good_e_0.png
-                output: /home/server/linyicheng/py_proj/keypoint_bench/output/
-                th: 3
-            visual_odometer_params:
-                save_path: /home/server/linyicheng/py_proj/keypoint_bench/fund/alike_e_0.png
-                output: /home/server/linyicheng/py_proj/keypoint_bench/output/
-
+  data:
+    params:
+      batch_size: 1
+      data_type: hpatches
+      hpatches_params:
+        alteration: v
+        gray: false
+        image_size: 512
+        root: /home/data/WangShuo/datasets/HPatch
+        type: hpatches
+      num_workers: 1
+  model:
+    params:
+      model_type: XFeat
+      task_type: repeatability
+      extractor_params:
+        border_dist: 8
+        min_score: 0.0
+        nms_dist: 6
+        threshold: 0
+        top_k: 1000
+      matcher_params:
+        type: brute_force
+        optical_flow_params:
+            distance: 10
+            win_size: 21
+            levels: 3
+            interation: 40
+            gray: False
+      repeatability_params:
+        image:
+          color: 255,0,0
+          max_error: 3
+          radius: 6
+        output: /home/output/
+        save_path: /home/output/alike_v.png
+        th: 3
+      Alike_params:
+        c1: 8
+        c2: 16
+        c3: 32
+        c4: 64
+        dim: 64
+        single_head: true
+        weight: /home/code/keypoint_bench/weights/alike-t.pth
+      D2Net_params:
+        weight: /home/code/keypoint_bench/weights/d2_tf.pth
+      DISK_params:
+        weight: /home/code/keypoint_bench/weights/disk.pth
+      EdgePoint_params:
+        c1: 8
+        c2: 16
+        c3: 32
+        c4: 64
+        dim: 64
+        single_head: true
+        weight: /home/code/keypoint_bench/weights/EdgePoint.pt
+      GoodPoint_params:
+        c0: 3
+        c1: 8
+        h0: 4
+        weight: /home/code/keypoint_bench/weights/goodpoint.pth
+      Harris_params:
+        block_size: 5
+        k: 0.04
+        ksize: 3
+      KeyNet_params:
+        kernel_size: 5
+        num_filters: 8
+        num_levels: 3
+        weight: /home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench/weights/keynet_pytorch.pth
+      LETNet_params:
+        weight: /home/code/keypoint_bench/weights/letnet.pth
+      SuperPoint_params:
+        weight: /home/code/keypoint_bench/weights/superpoint_v1.pth
+      XFeat_params:
+        weight: /home/code/keypoint_bench/weights/xfeat.pt
+      r2d2_params:
+        weight: /home/code/keypoint_bench/weights/r2d2_WASF_N16.pt
+      sfd2_params:
+        weight: /home/code/keypoint_bench/weights/sfd2.pth
+  trainer:
+    accelerator: gpu
+    devices:
+    - 1
+    max_epochs: 1
