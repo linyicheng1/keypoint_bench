@@ -1,35 +1,34 @@
-import subprocess
 import yaml
+import subprocess
 
-models = [
-    # 'XFeat',
-    # 'EdgePoint',
-    'sfd2',
-    # 'Alike',
-    'DISK',
-    # 'SuperPoint',
-]
-
-base_config = '/home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench_git/keypoint_bench/config/config_AUC.yaml'
+# 模型列表
+model_names = ["Alike", "SuperPoint", "XFeat", "D2Net", "DISK", "r2d2", "sfd2", "EdgePoint", ]
 
 
-for model in models:
-    print('Model:', model)
-    with open(base_config, 'r') as file:
+# 读取并修改config.yaml文件中的模型类型
+def update_model_type(model_name):
+    # 加载配置文件
+    with open("config/config_AUC.yaml", "r") as file:
         config = yaml.safe_load(file)
-    # 修改 model_type 的值
-    config['test']['model']['params']['model_type'] = model
-    output = config['test']['model']['params']['AUC_params']['output']
-    # 将修改后的配置写回 YAML 文件
-    with open("config.yaml", 'w') as file:
-        yaml.safe_dump(config, file)
-    result = subprocess.run(['python', '/home/server/linyicheng/py_proj/keypoint_bench/keypoint_bench_git/keypoint_bench/main.py', '-c', 'config.yaml', 'test'],
-                            capture_output=True, text=True)
-    print(result.stdout)
 
-    # create dir if not exist
-    subprocess.run(['mkdir', '-p', output + model])
-    # move matches* files to output dir
-    subprocess.run(['mv '+output+'matches* '+output + model], shell=True)
+    # 更新模型类型
+    config["test"]["model"]["params"]["model_type"] = model_name
 
+    # 保存修改后的配置文件
+    with open("config/config_run.yaml", "w") as file:
+        yaml.dump(config, file)
+
+# 运行python命令
+def run_command():
+    subprocess.run(["python3", "main.py", "-c", "./config/config_run.yaml", "test"])
+
+# 主函数
+def main():
+    for model_name in model_names:
+        print(f"Running with model: {model_name}")
+        update_model_type(model_name)  # 更新配置文件
+        run_command()  # 运行命令
+
+if __name__ == "__main__":
+    main()
 
