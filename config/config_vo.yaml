@@ -21,8 +21,8 @@ test:
                 gray: False
             kitti_params:
                 type: kitti
-                root: /home/data/Dataset/kitti_odom/data_odometry_gray/dataset/sequences/01/
-                gt: /home/data/Dataset/kitti_odom/data_odometry_poses/dataset/poses/01.txt
+                root: /home/data/Dataset/kitti_odom/data_odometry_gray/dataset/sequences/00/
+                gt: /home/data/Dataset/kitti_odom/data_odometry_poses/dataset/poses/00.txt
                 gray: False
             megadepth_params:
                 root: /home/data/Dataset/disk-data/megadepth
@@ -103,7 +103,7 @@ test:
                 brute_force_params:
                     metric: euclidean
                     max_distance: 5
-                    cross_check: True
+                    cross_check: True 
             VisualizeTrackingError_params:
                 save_path: /home/server/linyicheng/py_proj/keypoint_bench/track/good_f_i.png
                 output: /home/server/linyicheng/py_proj/keypoint_bench/output/
@@ -124,6 +124,6 @@ test:
                 output: /home/server/linyicheng/py_proj/keypoint_bench/output/
                 th: 3
             visual_odometer_params:
-                save_path: /home/server/linyicheng/py_proj/keypoint_bench/output/alike/alike_e_0.png
-                output: /home/server/linyicheng/py_proj/keypoint_bench/output/alike/
+                save_path: /home/output/alike_vo.png
+                output: /home/output/
 
