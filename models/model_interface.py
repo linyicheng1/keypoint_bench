@@ -54,7 +54,8 @@ class MInterface(pl.LightningModule):
             checkpoint = torch.load(params['KeyNet_params']['weight'])
             self.model.load_state_dict(checkpoint['state_dict'])
         elif params['model_type'] == 'LETNet':
-            self.model = LETNet(params['LETNet_params'])
+            self.model = LETNet(c1=8, c2=16, grayscale=False)
+            self.model.load_state_dict(torch.load(params['LETNet_params']['weight']))
         elif params['model_type'] == 'SuperPoint':
             self.model = SuperPointNet()
             self.model.load_state_dict(torch.load(params['SuperPoint_params']['weight']))

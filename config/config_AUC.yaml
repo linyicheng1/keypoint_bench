@@ -67,9 +67,9 @@ test:
             sfd2_params:
                 weight: /home/code/keypoint_bench/weights/sfd2.pth
             extractor_params:
-                nms_dist: 4
+                nms_dist: 6
                 min_score: 0.0
-                top_k: 2000
+                top_k: 1000
                 threshold: 0
                 border_dist: 8
             matcher_params:
