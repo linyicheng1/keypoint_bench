@@ -2,13 +2,13 @@ import yaml
 import subprocess
 
 # 模型列表
-model_names = ["Harris", "Alike", "SuperPoint", "XFeat", "D2Net", "DISK", "r2d2", "sfd2", "GoodPoint",  "EdgePoint", ]
+model_names = ["Alike", "SuperPoint", "XFeat", "D2Net", "DISK", "r2d2", "sfd2", "GoodPoint",  "EdgePoint", ]
 
 
 # 读取并修改config.yaml文件中的模型类型
 def update_model_type(model_name):
     # 加载配置文件
-    with open("config/config.yaml", "r") as file:
+    with open("config/config_MHA.yaml", "r") as file:
         config = yaml.safe_load(file)
 
     # 更新模型类型
