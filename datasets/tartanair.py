@@ -5,20 +5,24 @@ import numpy as np
 import pypose as pp
 import torch
 import os
+import hashlib
 
 
 def pose_2_fundamental_matrix(pose, fundamental, fx, fy, cx, cy):
     k = torch.tensor([[fx, 0, cx],
                       [0, fy, cy],
                       [0, 0, 1]])
+    # Raw TartanAir camera axes: forward/right/down. K uses right/down/forward.
+    c = k.new_tensor([[0, 1, 0], [0, 0, 1], [1, 0, 0]])
     fundamental.append(torch.zeros(3, 3).unsqueeze(0))
     for i in range(len(pose) - 1):
         dp = pp.Inv(pose[i + 1]) * pose[i]
-        t_hat = torch.tensor([[0, -dp[2], dp[1]],
-                              [dp[2], 0, -dp[0]],
-                              [-dp[1], dp[0], 0]])
-        r = pp.SO3(dp.tensor()[3:7])
-        f = torch.inverse(k).t() @ t_hat @ r.matrix() @ torch.inverse(k)
+        t = c @ dp.tensor()[:3]
+        r = c @ pp.SO3(dp.tensor()[3:7]).matrix() @ c.t()
+        t_hat = torch.tensor([[0, -t[2], t[1]],
+                              [t[2], 0, -t[0]],
+                              [-t[1], t[0], 0]])
+        f = torch.inverse(k).t() @ t_hat @ r @ torch.inverse(k)
         fundamental.append(f.unsqueeze(0))
 
 
@@ -51,7 +55,13 @@ class TartanAirDataset(data.Dataset):
 
         self.sequence_path = sequence_path
         self.gt_path = gt_path
-        self.fundamental_path = gt_path.replace('.txt', '_fundamental.pt')
+        # Do not read or overwrite legacy *_fundamental.pt (or other protocols).
+        # Hash the pose bytes and K so changed inputs cannot reuse a stale F.
+        with open(gt_path, 'rb') as pose_file:
+            cache_key = hashlib.sha256(pose_file.read())
+        cache_key.update(repr((self.fx, self.fy, self.cx, self.cy)).encode('ascii'))
+        self.fundamental_path = gt_path.replace(
+            '.txt', '_fundamental_frd_to_optical_v1_' + cache_key.hexdigest()[:16] + '.pt')
         self.gray = gray
         self.image_0_list = glob.glob(self.sequence_path + '*.png')
         self.image_0_list.sort()
@@ -59,11 +69,11 @@ class TartanAirDataset(data.Dataset):
         self.Fundamentals = []
         read_gt_csv(self.gt_path, self.ground_truth)
         if os.path.exists(self.fundamental_path):
-            self.Fundamentals = torch.load(self.fundamental_path)
+            self.Fundamentals = torch.load(self.fundamental_path, map_location='cpu', weights_only=True)
         else:
             pose_2_fundamental_matrix(self.ground_truth, self.Fundamentals, self.fx, self.fy, self.cx, self.cy)
-            fundamentals = torch.cat(self.Fundamentals, dim=0)
-            torch.save(fundamentals, self.fundamental_path)
+            self.Fundamentals = torch.cat(self.Fundamentals, dim=0)
+            torch.save(self.Fundamentals, self.fundamental_path)
         kitti_gt = gt_path.replace('.txt', '_kitti.txt')
         if not os.path.exists(kitti_gt):
             write_kitti_pose(kitti_gt, self.ground_truth)
